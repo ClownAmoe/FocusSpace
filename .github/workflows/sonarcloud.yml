@@ -60,10 +60,21 @@ jobs:
             /k:"ClownAmoe_FocusSpace" `
             /o:"clownamoe" `
             /d:sonar.token="$env:SONAR_TOKEN" `
-            /d:sonar.host.url="https://sonarcloud.io"
+            /d:sonar.host.url="https://sonarcloud.io" `
+            /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" `
+            /d:sonar.coverage.exclusions="**/Migrations/**,**/Program.cs"
 
-      - name: Build project
+      - name: Build solution
         run: dotnet build backend/FocusSpace.Api/FocusSpace.Api.csproj --no-restore --configuration Release
+
+      - name: Run tests with coverage
+        run: |
+          dotnet test backend/FocusSpace.Tests/FocusSpace.Tests.csproj `
+            --no-build `
+            --configuration Release `
+            --collect:"XPlat Code Coverage" `
+            --results-directory backend/TestResults `
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 
       - name: End SonarCloud analysis
         shell: powershell
