@@ -1,25 +1,28 @@
 using FocusSpace.Api.Controllers;
 using FocusSpace.Application.DTOs;
 using FocusSpace.Application.Interfaces;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Xunit;
 
 namespace FocusSpace.Tests.Controllers
 {
-    /// <summary>
-    /// Unit tests for <see cref="TasksController"/>.
-    /// Uses Moq to isolate the controller from ITaskService.
-    /// </summary>
     public class TasksControllerTests
     {
-        // ── Fixture helpers ───────────────────────────────────────────
-
         private static (TasksController controller, Mock<ITaskService> serviceMock) CreateController()
         {
             var serviceMock = new Mock<ITaskService>();
             var loggerMock = new Mock<ILogger<TasksController>>();
             var controller = new TasksController(serviceMock.Object, loggerMock.Object);
+
+            // TempData is null by default in unit tests — must be initialised manually
+            controller.TempData = new TempDataDictionary(
+                new DefaultHttpContext(),
+                new Mock<ITempDataProvider>().Object);
+
             return (controller, serviceMock);
         }
 
