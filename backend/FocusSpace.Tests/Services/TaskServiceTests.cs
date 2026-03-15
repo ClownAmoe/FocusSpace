@@ -3,6 +3,7 @@ using FocusSpace.Application.Interfaces;
 using FocusSpace.Application.Services;
 using Moq;
 using DomainTask = FocusSpace.Domain.Entities.Task;
+using Xunit;
 
 namespace FocusSpace.Tests.Services
 {
