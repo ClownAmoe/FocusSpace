@@ -21,6 +21,7 @@ namespace FocusSpace.Api
 
                 var builder = WebApplication.CreateBuilder(args);
 
+                // Підключаємо Serilog з конфігурації appsettings.json
                 builder.Host.UseSerilog((context, services, configuration) =>
                     configuration
                         .ReadFrom.Configuration(context.Configuration)
