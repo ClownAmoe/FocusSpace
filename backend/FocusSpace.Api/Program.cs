@@ -6,7 +6,6 @@ namespace FocusSpace.Api
     {
         public static void Main(string[] args)
         {
-            // Bootstrap logger — спрацює до побудови DI-контейнера
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Console()
                 .CreateBootstrapLogger();
@@ -16,8 +15,7 @@ namespace FocusSpace.Api
                 Log.Information("Starting FocusSpace API...");
 
                 var builder = WebApplication.CreateBuilder(args);
-
-                // Підключаємо Serilog з конфігурації appsettings.json
+           
                 builder.Host.UseSerilog((context, services, configuration) =>
                     configuration
                         .ReadFrom.Configuration(context.Configuration)
@@ -37,7 +35,6 @@ namespace FocusSpace.Api
                     app.UseSwaggerUI();
                 }
 
-                // Логування кожного HTTP-запиту
                 app.UseSerilogRequestLogging(options =>
                 {
                     options.MessageTemplate =
@@ -56,7 +53,6 @@ namespace FocusSpace.Api
             }
             finally
             {
-                // Гарантуємо що всі логи відправляться до Seq перед виходом
                 Log.CloseAndFlush();
             }
         }
