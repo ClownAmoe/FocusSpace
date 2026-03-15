@@ -49,7 +49,7 @@ jobs:
           dotnet tool install dotnet-sonarscanner --tool-path ${{ runner.temp }}\scanner
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore FocusSpace.sln 
 
       - name: Begin SonarCloud analysis
         shell: powershell
@@ -63,7 +63,7 @@ jobs:
             /d:sonar.host.url="https://sonarcloud.io"
 
       - name: Build project
-        run: dotnet build --no-restore --configuration Release
+        run: dotnet build FocusSpace.sln --no-restore --configuration Release
 
       - name: End SonarCloud analysis
         shell: powershell
