@@ -1,3 +1,8 @@
+using FocusSpace.Application.Interfaces;
+using FocusSpace.Application.Services;
+using FocusSpace.Infrastructure.Data;
+using FocusSpace.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 namespace FocusSpace.Api
@@ -15,7 +20,7 @@ namespace FocusSpace.Api
                 Log.Information("Starting FocusSpace API...");
 
                 var builder = WebApplication.CreateBuilder(args);
-           
+
                 builder.Host.UseSerilog((context, services, configuration) =>
                     configuration
                         .ReadFrom.Configuration(context.Configuration)
@@ -23,12 +28,42 @@ namespace FocusSpace.Api
                         .Enrich.FromLogContext()
                 );
 
-                builder.Services.AddControllers();
+                // ── Database ──────────────────────────────────────────
+                builder.Services.AddDbContext<AppDbContext>(options =>
+                    options.UseNpgsql(
+                        builder.Configuration.GetConnectionString("DefaultConnection"),
+                        npgsql => npgsql.EnableRetryOnFailure(3)
+                    ));
+
+                // ── Repositories & Services ───────────────────────────
+                builder.Services.AddScoped<ITaskRepository, TaskRepository>();
+                builder.Services.AddScoped<ITaskService, TaskService>();
+
+                // ── MVC + Swagger ─────────────────────────────────────
+                builder.Services.AddControllersWithViews();
                 builder.Services.AddEndpointsApiExplorer();
                 builder.Services.AddSwaggerGen();
 
                 var app = builder.Build();
 
+                // ── Auto-migrate on startup ───────────────────────────
+                using (var scope = app.Services.CreateScope())
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    try
+                    {
+                        Log.Information("Applying database migrations...");
+                        db.Database.Migrate();
+                        Log.Information("Migrations applied successfully.");
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Failed to apply migrations. Is PostgreSQL running?");
+                        throw;
+                    }
+                }
+
+                // ── Middleware ────────────────────────────────────────
                 if (app.Environment.IsDevelopment())
                 {
                     app.UseSwagger();
@@ -42,8 +77,13 @@ namespace FocusSpace.Api
                 });
 
                 app.UseHttpsRedirection();
+                app.UseStaticFiles();
+                app.UseRouting();
                 app.UseAuthorization();
-                app.MapControllers();
+
+                app.MapControllerRoute(
+                    name: "default",
+                    pattern: "{controller=Tasks}/{action=Index}/{id?}");
 
                 app.Run();
             }
