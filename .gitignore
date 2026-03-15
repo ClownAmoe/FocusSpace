@@ -16,3 +16,4 @@ logs/
 .env
 .DS_Store
 Thumbs.db
+appsettings.json
