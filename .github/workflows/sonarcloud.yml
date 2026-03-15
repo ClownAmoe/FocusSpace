@@ -48,8 +48,9 @@ jobs:
           New-Item -Path ${{ runner.temp }}\scanner -ItemType Directory -Force
           dotnet tool install dotnet-sonarscanner --tool-path ${{ runner.temp }}\scanner
 
+      # Restore the WHOLE solution so FocusSpace.Tests is also restored
       - name: Restore dependencies
-        run: dotnet restore backend/FocusSpace.Api/FocusSpace.Api.csproj
+        run: dotnet restore backend/FocusSpace.sln
 
       - name: Begin SonarCloud analysis
         shell: powershell
@@ -61,19 +62,23 @@ jobs:
             /o:"clownamoe" `
             /d:sonar.token="$env:SONAR_TOKEN" `
             /d:sonar.host.url="https://sonarcloud.io" `
-            /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" `
-            /d:sonar.coverage.exclusions="**/Migrations/**,**/Program.cs"
+            /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" `
+            /d:sonar.coverage.exclusions="**/Migrations/**,**/Program.cs,**/*.cshtml"
 
+      # Build the WHOLE solution — this also compiles FocusSpace.Tests
       - name: Build solution
-        run: dotnet build backend/FocusSpace.Api/FocusSpace.Api.csproj --no-restore --configuration Release
+        run: dotnet build backend/FocusSpace.sln --no-restore --configuration Release
 
+      # Run tests WITHOUT --no-build to ensure fresh test binaries
+      # Format=opencover inline with the collector name (semicolon syntax)
       - name: Run tests with coverage
+        shell: powershell
         run: |
           dotnet test backend/FocusSpace.Tests/FocusSpace.Tests.csproj `
-            --no-build `
             --configuration Release `
-            --collect:"XPlat Code Coverage" `
             --results-directory backend/TestResults `
+            --collect:"XPlat Code Coverage" `
+            --logger "trx;LogFileName=test-results.trx" `
             -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 
       - name: End SonarCloud analysis
