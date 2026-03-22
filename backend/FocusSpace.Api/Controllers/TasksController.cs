@@ -14,7 +14,7 @@ namespace FocusSpace.Api.Controllers
         private readonly ILogger<TasksController> _logger;
 
         // Temporary hardcoded user until auth is implemented
-        private const int CurrentUserId = 1;
+        private const int CurrentUserId = 5;
 
         public TasksController(ITaskService taskService, ILogger<TasksController> logger)
         {
