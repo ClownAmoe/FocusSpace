@@ -19,11 +19,11 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Controllers\" />
-  </ItemGroup>
+	<ItemGroup>
+		<Folder Include="Controllers\" />
+	</ItemGroup>
 
-  <ItemGroup>
+	<ItemGroup>
     <ProjectReference Include="..\FocusSpace.Application\FocusSpace.Application.csproj" />
     <ProjectReference Include="..\FocusSpace.Infrastructure\FocusSpace.Infrastructure.csproj" />
   </ItemGroup>
