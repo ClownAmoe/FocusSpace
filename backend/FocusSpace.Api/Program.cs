@@ -84,6 +84,9 @@ namespace FocusSpace.Api
                 builder.Services.AddScoped<ITaskService, TaskService>();
                 builder.Services.AddScoped<IEmailService, EmailService>();
 
+                builder.Services.AddScoped<ISessionRepository, SessionRepository>();
+                builder.Services.AddScoped<ISessionService, SessionService>();
+
                 // ── MVC + Swagger ─────────────────────────────────────
                 builder.Services.AddControllersWithViews();
                 builder.Services.AddEndpointsApiExplorer();

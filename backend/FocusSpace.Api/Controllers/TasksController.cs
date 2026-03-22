@@ -152,5 +152,13 @@ namespace FocusSpace.Api.Controllers
             TempData["Success"] = "Task deleted successfully.";
             return RedirectToAction(nameof(Index));
         }
+
+        // GET /Tasks/GetUserTasks
+        [HttpGet]
+        public async Task<IActionResult> GetUserTasks()
+        {
+            var tasks = await _taskService.GetTasksByUserIdAsync(CurrentUserId);
+            return Json(tasks);
+        }
     }
 }
