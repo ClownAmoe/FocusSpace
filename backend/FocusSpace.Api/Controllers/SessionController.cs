@@ -18,6 +18,7 @@ public class SessionController : Controller
     [HttpPost]
     public async Task<IActionResult> Start([FromBody] CreateSessionDto dto)
     {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
         var sessionId = await _sessionService.StartSessionAsync(dto);
         return Ok(new { sessionId });
     }
@@ -25,6 +26,7 @@ public class SessionController : Controller
     [HttpPost]
     public async Task<IActionResult> Complete([FromBody] UpdateSessionDto dto)
     {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
         await _sessionService.CompleteSessionAsync(dto);
         return Ok();
     }
@@ -32,6 +34,7 @@ public class SessionController : Controller
     [HttpPost]
     public async Task<IActionResult> Pause([FromBody] int sessionId)
     {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
         await _sessionService.PauseSessionAsync(sessionId);
         return Ok();
     }
@@ -39,6 +42,7 @@ public class SessionController : Controller
     [HttpPost]
     public async Task<IActionResult> Resume([FromBody] int sessionId)
     {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
         await _sessionService.ResumeSessionAsync(sessionId);
         return Ok();
     }
