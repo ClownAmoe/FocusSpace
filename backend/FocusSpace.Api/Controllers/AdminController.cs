@@ -1,56 +1,62 @@
+using FocusSpace.Domain.Entities;
 using FocusSpace.Infrastructure.Data;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DomainTask = FocusSpace.Domain.Entities.Task;
 
 namespace FocusSpace.Api.Controllers
 {
-  
+    /// <summary>
+    /// Admin panel — accessible only to users in the "Admin" role.
+    /// </summary>
+    [Authorize(Roles = "Admin")]
     public class AdminController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly UserManager<User> _userManager;
         private readonly ILogger<AdminController> _logger;
 
-        public AdminController(AppDbContext context, ILogger<AdminController> logger)
+        public AdminController(
+            AppDbContext context,
+            UserManager<User> userManager,
+            ILogger<AdminController> logger)
         {
             _context = context;
+            _userManager = userManager;
             _logger = logger;
         }
 
-   
+        // GET /Admin
         public async Task<IActionResult> Index()
         {
-            _logger.LogInformation("Admin panel accessed");
+            _logger.LogInformation("Admin panel accessed by {User}", User.Identity?.Name);
 
-            var stats = new
-            {
-                TotalUsers = await _context.Users.CountAsync(),
-                ActiveTasks = await _context.Tasks.CountAsync(),
-                ActiveSessions = await _context.Sessions.Where(s => s.Status == FocusSpace.Domain.Enums.SessionStatus.Ongoing).CountAsync(),
-                BlockedUsers = await _context.Users.Where(u => u.IsBlocked).CountAsync()
-            };
-
-            ViewBag.TotalUsers = stats.TotalUsers;
-            ViewBag.ActiveTasks = stats.ActiveTasks;
-            ViewBag.ActiveSessions = stats.ActiveSessions;
-            ViewBag.BlockedUsers = stats.BlockedUsers;
+            ViewBag.TotalUsers = await _context.Users.CountAsync();
+            ViewBag.ActiveTasks = await _context.Tasks.CountAsync();
+            ViewBag.ActiveSessions = await _context.Sessions
+                .CountAsync(s => s.Status == FocusSpace.Domain.Enums.SessionStatus.Ongoing);
+            ViewBag.BlockedUsers = await _context.Users.CountAsync(u => u.IsBlocked);
+            ViewBag.PendingApproval = await _context.Users
+                .CountAsync(u => !u.IsApproved && u.EmailConfirmed);
 
             return View();
         }
 
-       
+        // GET /Admin/GetUsers
         [HttpGet]
         public async Task<IActionResult> GetUsers()
         {
-            _logger.LogInformation("Fetching users list for admin panel");
-
             var users = await _context.Users
                 .Select(u => new
                 {
                     u.Id,
-                    u.Username,
+                    Username = u.UserName,
                     u.Email,
                     u.IsBlocked,
+                    u.IsApproved,
+                    u.EmailConfirmed,
                     u.CreatedAt,
                     TaskCount = u.Tasks.Count,
                     SessionCount = u.Sessions.Count
@@ -60,46 +66,83 @@ namespace FocusSpace.Api.Controllers
             return Json(users);
         }
 
-       
+        // POST /Admin/ApproveUser/{id}
+        [HttpPost]
+        public async Task<IActionResult> ApproveUser(int id)
+        {
+            var user = await _userManager.FindByIdAsync(id.ToString());
+            if (user is null)
+                return NotFound(new { message = "User not found." });
+
+            user.IsApproved = true;
+            var result = await _userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
+                return BadRequest(new { message = "Failed to approve user." });
+
+            _logger.LogInformation("User {UserId} ({Email}) approved by admin {Admin}",
+                user.Id, user.Email, User.Identity?.Name);
+
+            return Ok(new { message = $"User {user.Email} has been approved." });
+        }
+
+        // POST /Admin/BlockUser/{id}
         [HttpPost]
         public async Task<IActionResult> BlockUser(int id)
         {
-            _logger.LogInformation("Attempting to block user {UserId}", id);
-
-            var user = await _context.Users.FindAsync(id);
+            var user = await _userManager.FindByIdAsync(id.ToString());
             if (user is null)
-            {
-                return NotFound(new { message = "User not found" });
-            }
+                return NotFound(new { message = "User not found." });
 
             user.IsBlocked = true;
-            _context.Users.Update(user);
-            await _context.SaveChangesAsync();
+            await _userManager.UpdateAsync(user);
 
-            _logger.LogWarning("User {UserId} ({Email}) has been blocked", user.Id, user.Email);
+            // Force sign-out by updating the security stamp
+            await _userManager.UpdateSecurityStampAsync(user);
 
-            return Ok(new { message = $"User {user.Email} has been blocked" });
+            _logger.LogWarning("User {UserId} ({Email}) blocked by {Admin}",
+                user.Id, user.Email, User.Identity?.Name);
+
+            return Ok(new { message = $"User {user.Email} has been blocked." });
         }
 
-        
+        // POST /Admin/UnblockUser/{id}
         [HttpPost]
         public async Task<IActionResult> UnblockUser(int id)
         {
-            _logger.LogInformation("Attempting to unblock user {UserId}", id);
-
-            var user = await _context.Users.FindAsync(id);
+            var user = await _userManager.FindByIdAsync(id.ToString());
             if (user is null)
-            {
-                return NotFound(new { message = "User not found" });
-            }
+                return NotFound(new { message = "User not found." });
 
             user.IsBlocked = false;
-            _context.Users.Update(user);
-            await _context.SaveChangesAsync();
+            await _userManager.UpdateAsync(user);
 
-            _logger.LogWarning("User {UserId} ({Email}) has been unblocked", user.Id, user.Email);
+            _logger.LogInformation("User {UserId} ({Email}) unblocked by {Admin}",
+                user.Id, user.Email, User.Identity?.Name);
 
-            return Ok(new { message = $"User {user.Email} has been unblocked" });
+            return Ok(new { message = $"User {user.Email} has been unblocked." });
+        }
+
+        // POST /Admin/PromoteToAdmin/{id}
+        [HttpPost]
+        public async Task<IActionResult> PromoteToAdmin(int id)
+        {
+            var user = await _userManager.FindByIdAsync(id.ToString());
+            if (user is null)
+                return NotFound(new { message = "User not found." });
+
+            if (await _userManager.IsInRoleAsync(user, "Admin"))
+                return BadRequest(new { message = "User is already an admin." });
+
+            await _userManager.RemoveFromRoleAsync(user, "User");
+            await _userManager.AddToRoleAsync(user, "Admin");
+            user.Role = FocusSpace.Domain.Enums.UserRole.Admin;
+            await _userManager.UpdateAsync(user);
+
+            _logger.LogWarning("User {UserId} promoted to Admin by {Admin}",
+                user.Id, User.Identity?.Name);
+
+            return Ok(new { message = $"User {user.Email} has been promoted to Admin." });
         }
     }
 }

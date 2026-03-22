@@ -6,29 +6,96 @@
     <title>@ViewData["Title"] — FocusSpace</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <style>
-        body { background: #0f0f1a; color: #e0e0f0; }
-        .navbar { background: #1a1a2e !important; }
-        .navbar-brand { color: #a78bfa !important; font-weight: 700; letter-spacing: 1px; }
-        .card { background: #1e1e35; border: 1px solid #2d2d50; }
-        .btn-primary { background: #7c3aed; border-color: #7c3aed; }
-        .btn-primary:hover { background: #6d28d9; border-color: #6d28d9; }
-        .table { color: #e0e0f0; }
-        .table-hover tbody tr:hover { background: #2a2a45; }
-        a { color: #a78bfa; }
-        a:hover { color: #c4b5fd; }
-        .form-control { background: #12122a !important; color: #e0e0f0 !important; border-color: #3d3d60 !important; }
-        .form-control:focus { border-color: #7c3aed !important; box-shadow: 0 0 0 .2rem rgba(124,58,237,.25) !important; }
-
-        .modal-content {
-            background-color: #1e1e35;
+        body {
+            background: #0f0f1a;
             color: #e0e0f0;
+        }
+
+        .navbar {
+            background: #1a1a2e !important;
+        }
+
+        .navbar-brand {
+            color: #a78bfa !important;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .card {
+            background: #1e1e35;
             border: 1px solid #2d2d50;
         }
-        .modal-dialog {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh; /* Ensure centering vertically */
+
+        .btn-primary {
+            background: #7c3aed;
+            border-color: #7c3aed;
+        }
+
+            .btn-primary:hover {
+                background: #6d28d9;
+                border-color: #6d28d9;
+            }
+
+        .table {
+            color: #e0e0f0;
+        }
+
+        .table-hover tbody tr:hover {
+            background: #2a2a45;
+        }
+
+        a {
+            color: #a78bfa;
+        }
+
+            a:hover {
+                color: #c4b5fd;
+            }
+
+        .form-control {
+            background: #12122a !important;
+            color: #e0e0f0 !important;
+            border-color: #3d3d60 !important;
+        }
+
+            .form-control:focus {
+                border-color: #7c3aed !important;
+                box-shadow: 0 0 0 .2rem rgba(124,58,237,.25) !important;
+            }
+
+        .form-text {
+            color: #888 !important;
+        }
+
+        .dropdown-menu {
+            background: #1e1e35 !important;
+            border-color: #2d2d50 !important;
+        }
+
+        .dropdown-item {
+            color: #e0e0f0 !important;
+        }
+
+            .dropdown-item:hover {
+                background: #2a2a45 !important;
+            }
+
+        .alert-info {
+            background: #1a2a3a;
+            border-color: #1e5a8a;
+            color: #90caf9;
+        }
+
+        .alert-success {
+            background: #1a2a1a;
+            border-color: #2e7d32;
+            color: #a5d6a7;
+        }
+
+        .alert-danger {
+            background: #2a1a1a;
+            border-color: #7d2e2e;
+            color: #ef9a9a;
         }
     </style>
 </head>
@@ -36,208 +103,101 @@
     <nav class="navbar navbar-expand-lg navbar-dark mb-4">
         <div class="container">
             <a class="navbar-brand" href="/">🚀 FocusSpace</a>
-            <div class="navbar-nav ms-auto">
-                <div class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle text-light" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        Menu
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#settingsModal">Settings</a></li>
-                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#aboutModal">About Us</a></li>
-                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#profileModal">My Profile</a></li>
-                    </ul>
-                </div>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-lg-center gap-1">
+
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link text-light" asp-controller="Tasks" asp-action="Index">
+                                My Tasks
+                            </a>
+                        </li>
+
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" style="color:#fbbf24"
+                                   asp-controller="Admin" asp-action="Index">
+                                    Admin Panel
+                                </a>
+                            </li>
+                        }
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-light" href="#"
+                               id="userDropdown" role="button"
+                               data-bs-toggle="dropdown" aria-expanded="false">
+                                @User.Identity.Name
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li>
+                                    <form asp-controller="Account" asp-action="Logout" method="post" class="m-0">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="dropdown-item text-danger"
+                                                style="background:transparent;border:none;width:100%;text-align:left;padding:8px 16px;cursor:pointer">
+                                            Log Out
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link text-light" asp-controller="Account" asp-action="Login">
+                                Log In
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-primary btn-sm ms-2"
+                               asp-controller="Account" asp-action="Register">
+                                Register
+                            </a>
+                        </li>
+                    }
+
+                </ul>
             </div>
         </div>
     </nav>
 
-    <!-- Settings Modal -->
-    <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="settingsModalLabel">Settings</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Settings content goes here...</p>
-                </div>
+    <div class="container">
+
+        @* Глобальні TempData повідомлення *@
+        @if (TempData["Success"] is string success)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @success
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-        </div>
-    </div>
-
-    <!-- About Us Modal -->
-    <div class="modal fade" id="aboutModal" tabindex="-1" aria-labelledby="aboutModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="aboutModalLabel">About Us</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>About Us content goes here...</p>
-                </div>
+        }
+        @if (TempData["Error"] is string error)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @error
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-        </div>
-    </div>
-
-    <!-- My Profile Modal -->
-    <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="profileModalLabel">My Profile</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p><strong>Name:</strong> Alice</p>
-                    <p><strong>Email:</strong> alice@example.com</p>
-                    <p><strong>Role:</strong> User</p>
-                </div>
+        }
+        @if (TempData["Info"] is string info)
+        {
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                @info
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-        </div>
+        }
+
+        @RenderBody()
     </div>
-
-    <!-- Registration Modal -->
-    <div class="modal fade" id="registrationModal" tabindex="-1" aria-labelledby="registrationModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="registrationModalLabel">Register</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form>
-                        <div class="mb-3">
-                            <label for="registerUsername" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="registerUsername" placeholder="Enter your username">
-                        </div>
-                        <div class="mb-3">
-                            <label for="registerEmail" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="registerEmail" placeholder="Enter your email">
-                        </div>
-                        <div class="mb-3">
-                            <label for="registerPassword" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="registerPassword" placeholder="Enter your password">
-                        </div>
-                        <button type="submit" class="btn btn-primary">Register</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Login Modal -->
-    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="loginModalLabel">Login</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form>
-                        <div class="mb-3">
-                            <label for="loginUsername" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="loginUsername" placeholder="Enter your username">
-                        </div>
-                        <div class="mb-3">
-                            <label for="loginPassword" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="loginPassword" placeholder="Enter your password">
-                        </div>
-                        <button type="submit" class="btn btn-primary">Login</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Visualization Container -->
-    <div class="container-fluid position-relative" style="height: 80vh;">
-        <svg id="planet-visualization" class="w-100 h-100">
-            <!-- Example planets and lines -->
-            <line x1="100" y1="100" x2="300" y2="300" stroke="#7c3aed" stroke-width="2" />
-            <circle cx="100" cy="100" r="30" fill="#7c3aed" />
-            <circle cx="300" cy="300" r="30" fill="#7c3aed" />
-            <text x="100" y="100" fill="#fff" text-anchor="middle" dy=".3em">+</text>
-            <text x="300" y="300" fill="#fff" text-anchor="middle" dy=".3em">+</text>
-
-            <!-- Additional planets -->
-            <line x1="300" y1="300" x2="500" y2="150" stroke="#7c3aed" stroke-width="2" />
-            <circle cx="500" cy="150" r="30" fill="#7c3aed" />
-            <text x="500" y="150" fill="#fff" text-anchor="middle" dy=".3em">+</text>
-
-            <line x1="500" y1="150" x2="700" y2="400" stroke="#7c3aed" stroke-width="2" />
-            <circle cx="700" cy="400" r="30" fill="#7c3aed" />
-            <text x="700" y="400" fill="#fff" text-anchor="middle" dy=".3em">+</text>
-
-            <!-- Rocket -->
-            <polygon id="rocket" points="10,0 20,20 0,20" fill="#ff5722" transform="translate(100, 100)" />
-        </svg>
-    </div>
-
-    <!-- Modal Popup -->
-    <div class="modal fade" id="contentModal" tabindex="-1" aria-labelledby="contentModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="contentModalLabel">Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    @RenderBody()
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add links to trigger modals -->
-    <div class="navbar-nav ms-auto">
-        <a class="nav-link text-light" href="#" data-bs-toggle="modal" data-bs-target="#registrationModal">Register</a>
-        <a class="nav-link text-light" href="#" data-bs-toggle="modal" data-bs-target="#loginModal">Login</a>
-    </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const svg = document.getElementById('planet-visualization');
-            svg.addEventListener('click', (event) => {
-                if (event.target.tagName === 'text') {
-                    const modal = new bootstrap.Modal(document.getElementById('contentModal'));
-                    modal.show();
-                }
-            });
-        });
-    </script>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const rocket = document.getElementById('rocket');
-            const planets = document.querySelectorAll('circle');
-
-            planets.forEach(planet => {
-                planet.addEventListener('mouseenter', () => {
-                    const cx = planet.getAttribute('cx');
-                    const cy = planet.getAttribute('cy');
-
-                    rocket.animate([
-                        { transform: rocket.getAttribute('transform') },
-                        { transform: `translate(${cx}px, ${cy}px)` }
-                    ], {
-                        duration: 1000,
-                        easing: 'ease-in-out',
-                        fill: 'forwards'
-                    });
-
-                    rocket.setAttribute('transform', `translate(${cx}, ${cy})`);
-                });
-            });
-        });
-    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <partial name="_ValidationScriptsPartial" />
-
-    @* Render optional Scripts section defined by child views *@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
