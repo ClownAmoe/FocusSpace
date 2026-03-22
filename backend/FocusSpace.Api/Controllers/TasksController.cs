@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace FocusSpace.Api.Controllers
 {
     /// <summary>
-    /// Task management — requires authenticated + approved users (role: User or Admin).
+    /// Task management ï¿½ requires authenticated + approved users (role: User or Admin).
     /// </summary>
     [Authorize(Roles = "User,Admin")]
     public class TasksController : Controller
@@ -27,7 +27,7 @@ namespace FocusSpace.Api.Controllers
             _logger = logger;
         }
 
-        // Helper — resolves the current user's integer ID from the claims principal.
+        // Helper ï¿½ resolves the current user's integer ID from the claims principal.
         private async Task<int> GetCurrentUserIdAsync()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -157,7 +157,7 @@ namespace FocusSpace.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> GetUserTasks()
         {
-            var tasks = await _taskService.GetTasksByUserIdAsync(CurrentUserId);
+            var tasks = await _taskService.GetTasksByUserIdAsync(await GetCurrentUserIdAsync());
             return Json(tasks);
         }
     }
