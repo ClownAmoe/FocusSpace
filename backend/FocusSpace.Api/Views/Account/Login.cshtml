@@ -1,0 +1,59 @@
+﻿@model FocusSpace.Application.DTOs.LoginDto
+@{
+    ViewData["Title"] = "Login";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card p-4">
+            <h4 class="mb-1">Welcome back</h4>
+            <p class="text-muted small mb-4">Log in to your FocusSpace account.</p>
+
+            @if (TempData["Success"] is string success)
+            {
+                <div class="alert alert-success">@success</div>
+            }
+            @if (TempData["Info"] is string info)
+            {
+                <div class="alert alert-info">@info</div>
+            }
+
+            <form asp-action="Login" asp-route-returnUrl="@returnUrl" method="post">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Email" class="form-label">Email</label>
+                    <input asp-for="Email" class="form-control" type="email" placeholder="you@example.com" autocomplete="email" />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Password" class="form-label">Password</label>
+                    <input asp-for="Password" class="form-control" type="password" placeholder="Your password" autocomplete="current-password" />
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3 d-flex justify-content-between align-items-center">
+                    <div class="form-check">
+                        <input asp-for="RememberMe" class="form-check-input" />
+                        <label asp-for="RememberMe" class="form-check-label text-muted small">Remember me</label>
+                    </div>
+                    <a asp-action="ForgotPassword" asp-controller="Account" class="small">Forgot password?</a>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">Log In</button>
+            </form>
+
+            <hr class="my-3" />
+            <p class="text-center text-muted small mb-0">
+                Don't have an account?
+                <a asp-action="Register" asp-controller="Account">Register</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

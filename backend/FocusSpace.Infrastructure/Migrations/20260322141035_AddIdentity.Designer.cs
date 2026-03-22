@@ -3,6 +3,7 @@ using System;
 using FocusSpace.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FocusSpace.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260322141035_AddIdentity")]
+    partial class AddIdentity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -95,64 +98,6 @@ namespace FocusSpace.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Planets");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Description = "The closest planet to the Sun",
-                            Name = "Mercury",
-                            OrderNumber = 1
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Description = "The hottest planet",
-                            Name = "Venus",
-                            OrderNumber = 2
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Description = "Our home planet",
-                            Name = "Earth",
-                            OrderNumber = 3
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Description = "The Red Planet",
-                            Name = "Mars",
-                            OrderNumber = 4
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Description = "The largest planet",
-                            Name = "Jupiter",
-                            OrderNumber = 5
-                        },
-                        new
-                        {
-                            Id = 6,
-                            Description = "The ringed planet",
-                            Name = "Saturn",
-                            OrderNumber = 6
-                        },
-                        new
-                        {
-                            Id = 7,
-                            Description = "The ice giant",
-                            Name = "Uranus",
-                            OrderNumber = 7
-                        },
-                        new
-                        {
-                            Id = 8,
-                            Description = "The farthest planet",
-                            Name = "Neptune",
-                            OrderNumber = 8
-                        });
                 });
 
             modelBuilder.Entity("FocusSpace.Domain.Entities.Session", b =>

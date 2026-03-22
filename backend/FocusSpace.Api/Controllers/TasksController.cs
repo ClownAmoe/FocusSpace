@@ -1,57 +1,64 @@
 using FocusSpace.Application.DTOs;
 using FocusSpace.Application.Interfaces;
+using FocusSpace.Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FocusSpace.Api.Controllers
 {
     /// <summary>
-    /// MVC controller that handles the Task Management use-case.
-    /// Provides CRUD operations and renders Razor views.
+    /// Task management — requires authenticated + approved users (role: User or Admin).
     /// </summary>
+    [Authorize(Roles = "User,Admin")]
     public class TasksController : Controller
     {
         private readonly ITaskService _taskService;
+        private readonly UserManager<User> _userManager;
         private readonly ILogger<TasksController> _logger;
 
-        // Temporary hardcoded user until auth is implemented
-        private const int CurrentUserId = 5;
-
-        public TasksController(ITaskService taskService, ILogger<TasksController> logger)
+        public TasksController(
+            ITaskService taskService,
+            UserManager<User> userManager,
+            ILogger<TasksController> logger)
         {
             _taskService = taskService;
+            _userManager = userManager;
             _logger = logger;
+        }
+
+        // Helper — resolves the current user's integer ID from the claims principal.
+        private async Task<int> GetCurrentUserIdAsync()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            return user?.Id ?? throw new InvalidOperationException("Authenticated user not found in database.");
         }
 
         // GET /Tasks
         public async Task<IActionResult> Index()
         {
-            _logger.LogInformation("User {UserId} is viewing their task list", CurrentUserId);
+            var userId = await GetCurrentUserIdAsync();
+            _logger.LogInformation("User {UserId} is viewing their task list", userId);
 
-            var tasks = await _taskService.GetTasksByUserIdAsync(CurrentUserId);
+            var tasks = await _taskService.GetTasksByUserIdAsync(userId);
             return View(tasks);
         }
 
         // GET /Tasks/Details/5
         public async Task<IActionResult> Details(int id)
         {
-            _logger.LogInformation("User {UserId} requested details for task {TaskId}", CurrentUserId, id);
+            var userId = await GetCurrentUserIdAsync();
+            _logger.LogInformation("User {UserId} requested details for task {TaskId}", userId, id);
 
             var task = await _taskService.GetTaskByIdAsync(id);
-
-            if (task is null)
-            {
-                _logger.LogWarning("Task {TaskId} not found", id);
+            if (task is null || task.UserId != userId)
                 return NotFound();
-            }
 
             return View(task);
         }
 
         // GET /Tasks/Create
-        public IActionResult Create()
-        {
-            return View();
-        }
+        public IActionResult Create() => View();
 
         // POST /Tasks/Create
         [HttpPost]
@@ -61,9 +68,8 @@ namespace FocusSpace.Api.Controllers
             if (!ModelState.IsValid)
                 return View(dto);
 
-            dto.UserId = CurrentUserId;
-
-            _logger.LogInformation("User {UserId} is creating task '{Title}'", CurrentUserId, dto.Title);
+            dto.UserId = await GetCurrentUserIdAsync();
+            _logger.LogInformation("User {UserId} creating task '{Title}'", dto.UserId, dto.Title);
 
             try
             {
@@ -73,7 +79,6 @@ namespace FocusSpace.Api.Controllers
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Validation error while creating task for user {UserId}", CurrentUserId);
                 ModelState.AddModelError(string.Empty, ex.Message);
                 return View(dto);
             }
@@ -82,19 +87,13 @@ namespace FocusSpace.Api.Controllers
         // GET /Tasks/Edit/5
         public async Task<IActionResult> Edit(int id)
         {
+            var userId = await GetCurrentUserIdAsync();
             var task = await _taskService.GetTaskByIdAsync(id);
 
-            if (task is null)
+            if (task is null || task.UserId != userId)
                 return NotFound();
 
-            var dto = new UpdateTaskDto
-            {
-                Id = task.Id,
-                Title = task.Title,
-                Description = task.Description
-            };
-
-            return View(dto);
+            return View(new UpdateTaskDto { Id = task.Id, Title = task.Title, Description = task.Description });
         }
 
         // POST /Tasks/Edit/5
@@ -102,27 +101,25 @@ namespace FocusSpace.Api.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, UpdateTaskDto dto)
         {
-            if (id != dto.Id)
-                return BadRequest();
+            if (id != dto.Id) return BadRequest();
+            if (!ModelState.IsValid) return View(dto);
 
-            if (!ModelState.IsValid)
-                return View(dto);
-
-            _logger.LogInformation("User {UserId} is editing task {TaskId}", CurrentUserId, id);
+            // Ownership check
+            var userId = await GetCurrentUserIdAsync();
+            var existing = await _taskService.GetTaskByIdAsync(id);
+            if (existing is null || existing.UserId != userId)
+                return NotFound();
 
             try
             {
                 var result = await _taskService.UpdateTaskAsync(dto);
-
-                if (result is null)
-                    return NotFound();
+                if (result is null) return NotFound();
 
                 TempData["Success"] = "Task updated successfully.";
                 return RedirectToAction(nameof(Index));
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Validation error while updating task {TaskId}", id);
                 ModelState.AddModelError(string.Empty, ex.Message);
                 return View(dto);
             }
@@ -131,9 +128,10 @@ namespace FocusSpace.Api.Controllers
         // GET /Tasks/Delete/5
         public async Task<IActionResult> Delete(int id)
         {
+            var userId = await GetCurrentUserIdAsync();
             var task = await _taskService.GetTaskByIdAsync(id);
 
-            if (task is null)
+            if (task is null || task.UserId != userId)
                 return NotFound();
 
             return View(task);
@@ -144,13 +142,13 @@ namespace FocusSpace.Api.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            _logger.LogInformation("User {UserId} is deleting task {TaskId}", CurrentUserId, id);
+            var userId = await GetCurrentUserIdAsync();
+            var task = await _taskService.GetTaskByIdAsync(id);
 
-            var deleted = await _taskService.DeleteTaskAsync(id);
-
-            if (!deleted)
+            if (task is null || task.UserId != userId)
                 return NotFound();
 
+            await _taskService.DeleteTaskAsync(id);
             TempData["Success"] = "Task deleted successfully.";
             return RedirectToAction(nameof(Index));
         }
