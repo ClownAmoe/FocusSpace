@@ -1,0 +1,246 @@
+﻿@{
+    ViewData["Title"] = "Focus Timer";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+
+            <div class="card p-4 text-center" id="setup">
+                <h4 class="mb-4" style="color:#a78bfa;">🚀 Focus Timer</h4>
+
+                <label class="form-label" style="color:#e0e0f0;">How many minutes?</label>
+                <input type="number" id="minutesInput"
+                       class="form-control mb-1"
+                       style="background:#12122a; color:#e0e0f0; border-color:#3d3d60;"
+                       min="1" max="180" value="25" />
+                <div id="inputError" class="text-danger small mb-2" style="display:none;"></div>
+
+                <label class="form-label mt-2" style="color:#e0e0f0;">Task (optional)</label>
+                <select id="taskSelect"
+                        class="form-control mb-3"
+                        style="background:#12122a; color:#e0e0f0; border-color:#3d3d60;">
+                    <option value="">— No task —</option>
+                </select>
+
+                <button class="btn btn-primary w-100 mt-2" onclick="startTimer()">
+                    ▶ Start Session
+                </button>
+                <div id="startError" class="text-danger small mt-2" style="display:none;"></div>
+            </div>
+
+            <div class="card p-4 text-center" id="timerDisplay" style="display:none">
+                <h4 class="mb-1" style="color:#a0a0c0;">Focusing...</h4>
+                <p id="activeTaskLabel" class="small mb-2" style="color:#7c6aaa;"></p>
+                <div class="display-1 my-3" id="timeLeft"
+                     style="color:#a78bfa; font-weight:700; letter-spacing:4px;">
+                    00:00
+                </div>
+                <div class="d-flex gap-2 justify-content-center mt-3">
+                    <button class="btn btn-warning" id="pauseBtn" onclick="togglePause()">
+                        ⏸ Pause
+                    </button>
+                    <button class="btn btn-danger" onclick="cancelTimer()">
+                        ✕ Cancel
+                    </button>
+                </div>
+                <div id="cancelConfirm" class="mt-3" style="display:none;">
+                    <p style="color:#e0e0f0;">Cancel this session?</p>
+                    <button class="btn btn-danger btn-sm me-2" onclick="finishTimer(false)">Yes, cancel</button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="hideCancelConfirm()">No</button>
+                </div>
+            </div>
+
+            <div class="card p-4 text-center" id="doneMessage" style="display:none">
+                <div style="font-size:3rem">✅</div>
+                <h4 class="mt-3 text-success">Session Complete!</h4>
+                <p style="color:#a0a0c0;">Great work! Time to take a break.</p>
+                <button class="btn btn-primary mt-2" onclick="resetTimer()">
+                    + New Session
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let intervalId = null;
+        let secondsLeft = 0;
+        let totalSeconds = 0;
+        let currentSessionId = null;
+        let isPaused = false;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const res = await fetch('/Tasks/GetUserTasks');
+                if (!res.ok) return;
+                const tasks = await res.json();
+                const select = document.getElementById('taskSelect');
+                tasks.forEach(t => {
+                    const option = document.createElement('option');
+                    option.value = t.id;
+                    option.textContent = t.title;
+                    select.appendChild(option);
+                });
+            } catch (e) {
+                console.error('Failed to load tasks:', e);
+            }
+        });
+
+        function showError(elementId, message) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.style.display = 'block';
+        }
+
+        function hideError(elementId) {
+            const el = document.getElementById(elementId);
+            el.textContent = '';
+            el.style.display = 'none';
+        }
+
+        async function startTimer() {
+            hideError('inputError');
+            hideError('startError');
+
+            const minutes = parseInt(document.getElementById('minutesInput').value);
+            if (!minutes || minutes < 1) {
+                showError('inputError', 'Please enter a valid number of minutes.');
+                return;
+            }
+
+            const taskSelectEl = document.getElementById('taskSelect');
+            const taskId = taskSelectEl.value ? parseInt(taskSelectEl.value) : null;
+            const taskLabel = taskId ? taskSelectEl.options[taskSelectEl.selectedIndex].text : null;
+
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            const plannedDuration = `${String(hours).padStart(2, '00')}:${String(mins).padStart(2, '0')}:00`;
+
+            const res = await fetch('/Session/Start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: 2, // TODO: Get actual user ID from auth context
+                    taskId: taskId,
+                    plannedDuration: plannedDuration
+                })
+            });
+
+            if (!res.ok) {
+                showError('startError', 'Failed to start session. Please try again.');
+                return;
+            }
+
+            const data = await res.json();
+            currentSessionId = data.sessionId;
+
+            totalSeconds = minutes * 60;
+            secondsLeft = totalSeconds;
+            isPaused = false;
+
+            document.getElementById('activeTaskLabel').textContent = taskLabel ? `Task: ${taskLabel}` : '';
+            document.getElementById('setup').style.display = 'none';
+            document.getElementById('timerDisplay').style.display = 'block';
+            updateDisplay();
+
+            intervalId = setInterval(() => {
+                secondsLeft--;
+                updateDisplay();
+                if (secondsLeft <= 0) finishTimer(true);
+            }, 1000);
+        }
+
+        async function togglePause() {
+            const btn = document.getElementById('pauseBtn');
+
+            if (!isPaused) {
+                clearInterval(intervalId);
+                isPaused = true;
+                btn.textContent = '▶ Resume';
+                btn.classList.replace('btn-warning', 'btn-success');
+
+                await fetch('/Session/Pause', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(currentSessionId)
+                });
+            } else {
+                isPaused = false;
+                btn.textContent = '⏸ Pause';
+                btn.classList.replace('btn-success', 'btn-warning');
+
+                await fetch('/Session/Resume', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(currentSessionId)
+                });
+
+                intervalId = setInterval(() => {
+                    secondsLeft--;
+                    updateDisplay();
+                    if (secondsLeft <= 0) finishTimer(true);
+                }, 1000);
+            }
+        }
+
+        function updateDisplay() {
+            const m = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
+            const s = String(secondsLeft % 60).padStart(2, '0');
+            document.getElementById('timeLeft').textContent = `${m}:${s}`;
+        }
+
+        async function finishTimer(completed) {
+            clearInterval(intervalId);
+            hideCancelConfirm();
+
+            if (!currentSessionId) {
+                resetTimer();
+                return;
+            }
+
+            await fetch('/Session/Complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: currentSessionId,
+                    status: completed ? 'Completed' : 'Aborted',
+                    endTime: new Date().toISOString(),
+                    actualDuration: formatDuration(totalSeconds - secondsLeft)
+                })
+            });
+
+            document.getElementById('timerDisplay').style.display = 'none';
+            if (completed) {
+                document.getElementById('doneMessage').style.display = 'block';
+            } else {
+                resetTimer();
+            }
+        }
+
+        function cancelTimer() {
+            document.getElementById('cancelConfirm').style.display = 'block';
+        }
+
+        function hideCancelConfirm() {
+            document.getElementById('cancelConfirm').style.display = 'none';
+        }
+
+        function resetTimer() {
+            currentSessionId = null;
+            isPaused = false;
+            document.getElementById('doneMessage').style.display = 'none';
+            document.getElementById('setup').style.display = 'block';
+        }
+
+        function formatDuration(seconds) {
+            const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
+            const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+            const s = String(seconds % 60).padStart(2, '0');
+            return `${h}:${m}:${s}`;
+        }
+    </script>
+}

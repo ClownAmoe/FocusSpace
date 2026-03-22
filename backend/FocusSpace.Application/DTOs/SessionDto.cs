@@ -26,6 +26,6 @@
         public int Id { get; set; }
         public string Status { get; set; } = string.Empty;
         public DateTime? EndTime { get; set; }
-        public TimeSpan? ActualDuration { get; set; }
+        public string? ActualDuration { get; set; }
     }
 }
