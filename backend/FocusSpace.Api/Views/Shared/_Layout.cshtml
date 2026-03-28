@@ -6,96 +6,287 @@
     <title>@ViewData["Title"] — FocusSpace</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <style>
+        :root {
+            --dark-amethyst: #231942ff;
+            --dusty-grape: #5e548eff;
+            --amethyst-smoke: #9f86c0ff;
+            --lilac: #be95c4ff;
+            --pink-orchid: #e0b1cbff;
+            --dark-button: #3e2c5aff;
+            --dark-button-hover: #2e1c4aff;
+            --text-primary: #f5e6faff;
+            --text-secondary: #d1c4e9ff;
+            --text-muted: #b39ddbff;
+            --text-danger: #ff8a80ff;
+            --text-success: #a5d6a7ff;
+            --text-info: #90caf9ff;
+        }
+
         body {
-            background: #0f0f1a;
-            color: #e0e0f0;
+            background: var(--dark-amethyst);
+            color: var(--text-primary);
         }
 
         .navbar {
-            background: #1a1a2e !important;
+            background: var(--dusty-grape) !important;
         }
 
         .navbar-brand {
-            color: #a78bfa !important;
+            color: var(--text-primary) !important;
             font-weight: 700;
             letter-spacing: 1px;
         }
 
         .card {
-            background: #1e1e35;
-            border: 1px solid #2d2d50;
+            background: var(--amethyst-smoke);
+            border: 1px solid var(--dusty-grape);
         }
 
         .btn-primary {
-            background: #7c3aed;
-            border-color: #7c3aed;
+            background: var(--dark-button);
+            border-color: var(--dark-button);
+            color: var(--text-primary);
+            font-weight: 600;
         }
 
-            .btn-primary:hover {
-                background: #6d28d9;
-                border-color: #6d28d9;
-            }
+        .btn-primary:hover {
+            background: var(--dark-button-hover);
+            border-color: var(--dark-button-hover);
+            color: var(--text-primary);
+        }
 
         .table {
-            color: #e0e0f0;
+            color: var(--text-primary);
         }
 
         .table-hover tbody tr:hover {
-            background: #2a2a45;
+            background: var(--dusty-grape);
+            color: var(--text-primary);
+        }
+
+        .table th {
+            color: var(--text-primary);
+            background: var(--dusty-grape);
+            border-color: var(--dusty-grape);
+        }
+
+        .table td {
+            border-color: var(--dusty-grape);
         }
 
         a {
-            color: #a78bfa;
+            color: var(--text-info);
+            text-decoration: none;
         }
 
-            a:hover {
-                color: #c4b5fd;
-            }
+        a:hover {
+            color: var(--text-primary);
+            text-decoration: underline;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--text-primary) !important;
+        }
 
         .form-control {
-            background: #12122a !important;
-            color: #e0e0f0 !important;
-            border-color: #3d3d60 !important;
+            background: var(--amethyst-smoke) !important;
+            color: var(--text-secondary) !important;
+            border-color: var(--dusty-grape) !important;
         }
 
-            .form-control:focus {
-                border-color: #7c3aed !important;
-                box-shadow: 0 0 0 .2rem rgba(124,58,237,.25) !important;
-            }
+        .form-control:focus {
+            border-color: var(--lilac) !important;
+            box-shadow: 0 0 0 .2rem rgba(190, 149, 196, .25) !important;
+            color: var(--text-primary) !important;
+        }
+
+        .form-label {
+            color: var(--text-primary) !important;
+            font-weight: 500;
+        }
 
         .form-text {
-            color: #888 !important;
+            color: var(--text-muted) !important;
+        }
+
+        .form-check-input {
+            background: var(--amethyst-smoke);
+            border-color: var(--dusty-grape);
+        }
+
+        .form-check-input:checked {
+            background: var(--dark-button);
+            border-color: var(--dark-button);
+        }
+
+        .form-check-label {
+            color: var(--text-secondary) !important;
+        }
+
+        .btn-outline-secondary {
+            color: var(--text-primary);
+            border-color: var(--dusty-grape);
+            background: var(--dusty-grape);
+        }
+
+        .btn-outline-secondary:hover {
+            background: var(--lilac);
+            border-color: var(--lilac);
+            color: var(--dark-amethyst);
+        }
+
+        .btn-outline-warning {
+            color: var(--dark-amethyst);
+            border-color: #fbbf24;
+            background: #fbbf24;
+            font-weight: 600;
+        }
+
+        .btn-outline-warning:hover {
+            background: #fcd34d;
+            border-color: #fcd34d;
+            color: var(--dark-amethyst);
+        }
+
+        .btn-outline-danger {
+            color: #fff;
+            border-color: var(--text-danger);
+            background: var(--text-danger);
+            font-weight: 600;
+        }
+
+        .btn-outline-danger:hover {
+            background: #ff6b6b;
+            border-color: #ff6b6b;
+            color: #fff;
         }
 
         .dropdown-menu {
-            background: #1e1e35 !important;
-            border-color: #2d2d50 !important;
+            background: var(--amethyst-smoke) !important;
+            border-color: var(--dusty-grape) !important;
         }
 
         .dropdown-item {
-            color: #e0e0f0 !important;
+            color: var(--text-secondary) !important;
         }
 
-            .dropdown-item:hover {
-                background: #2a2a45 !important;
-            }
+        .dropdown-item:hover {
+            background: var(--dark-button-hover) !important;
+            color: var(--text-primary) !important;
+        }
 
         .alert-info {
-            background: #1a2a3a;
-            border-color: #1e5a8a;
-            color: #90caf9;
+            background: var(--dusty-grape);
+            border-color: var(--lilac);
+            color: var(--text-info);
         }
 
         .alert-success {
-            background: #1a2a1a;
-            border-color: #2e7d32;
-            color: #a5d6a7;
+            background: var(--amethyst-smoke);
+            border-color: var(--lilac);
+            color: var(--text-success);
         }
 
         .alert-danger {
-            background: #2a1a1a;
-            border-color: #7d2e2e;
-            color: #ef9a9a;
+            background: var(--dusty-grape);
+            border-color: var(--pink-orchid);
+            color: var(--text-danger);
+        }
+
+        /* Modal Styles */
+        .modal-content {
+            background: var(--dark-amethyst);
+            border: 1px solid var(--dusty-grape);
+            color: var(--text-primary);
+        }
+
+        .modal-header {
+            background: var(--dusty-grape);
+            border-bottom: 1px solid var(--lilac);
+            color: var(--text-primary);
+        }
+
+        .modal-header .btn-close {
+            filter: invert(1);
+        }
+
+        .modal-body {
+            background: var(--dark-amethyst);
+            color: var(--text-primary);
+        }
+
+        .modal-body p {
+            color: var(--text-secondary);
+        }
+
+        .modal-footer {
+            background: var(--dark-amethyst);
+            border-top: 1px solid var(--dusty-grape);
+        }
+
+        .btn-secondary {
+            background: var(--dark-button);
+            border-color: var(--dark-button);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--dark-button-hover);
+            border-color: var(--dark-button-hover);
+            color: var(--text-primary);
+        }
+
+        label {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .small, .text-small {
+            color: var(--text-muted);
+        }
+
+        .planet {
+            transition: transform 0.5s ease, top 0.5s ease, left 0.5s ease;
+            position: fixed; /* Ensure the planet moves relative to the viewport */
+        }
+
+        .planet.active {
+            transform: scale(2);
+            top: 50%; /* Center vertically */
+            left: 20%; /* Always move to 20% from the left edge of the screen */
+            transform: scale(2) translateY(-50%); /* Scale and center vertically */
+        }
+
+        .modal-right {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            height: 100%;
+            width: 50%;
+            background: var(--dark-amethyst);
+            color: var(--text-primary);
+            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.5);
+            transition: right 0.5s ease;
+            z-index: 1050;
+        }
+
+        .modal-right.active {
+            right: 0;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1040;
+            display: none;
+        }
+
+        .modal-overlay.active {
+            display: block;
         }
     </style>
 </head>
@@ -144,6 +335,20 @@
                                             Log Out
                                         </button>
                                     </form>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-light" href="#" id="menuDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Menu
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="menuDropdown">
+                                <li>
+                                    <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#aboutUsModal">About Us</a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#myAccountModal">My Account</a>
                                 </li>
                             </ul>
                         </li>
@@ -201,3 +406,286 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+
+<!-- About Us Modal -->
+<div class="modal fade" id="aboutUsModal" tabindex="-1" aria-labelledby="aboutUsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="aboutUsModalLabel">About Us</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Welcome to FocusSpace! We are dedicated to helping you stay productive and organized.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- My Account Modal -->
+<div class="modal fade" id="myAccountModal" tabindex="-1" aria-labelledby="myAccountModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myAccountModalLabel">My Account</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Manage your account settings and preferences here.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Session and Task Creation -->
+<div id="sessionTaskModal" class="modal-right">
+    <div class="p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5>Create Session and Task</h5>
+            <button type="button" class="btn-close" aria-label="Close"></button>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Create Task</h6>
+                <form asp-controller="Tasks" asp-action="Create" method="post">
+                    <div class="mb-3">
+                        <label for="taskTitle" class="form-label">Title</label>
+                        <input type="text" id="taskTitle" name="Title" class="form-control" placeholder="Task Title">
+                    </div>
+                    <div class="mb-3">
+                        <label for="taskDescription" class="form-label">Description</label>
+                        <textarea id="taskDescription" name="Description" class="form-control" rows="3" placeholder="Task Description"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create Task</button>
+                </form>
+            </div>
+            <div class="col-md-6">
+                <h6>Create Session</h6>
+                <form asp-controller="Session" asp-action="Start" method="post">
+                    <div class="mb-3">
+                        <label for="sessionDuration" class="form-label">Planned Duration</label>
+                        <input type="text" id="sessionDuration" name="PlannedDuration" class="form-control" placeholder="HH:MM:SS">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Start Session</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .planet {
+        transition: transform 0.5s ease, top 0.5s ease, left 0.5s ease;
+        position: fixed; /* Ensure the planet moves relative to the viewport */
+    }
+
+    .planet.active {
+        transform: scale(2);
+        top: 50%; /* Center vertically */
+        left: 20%; /* Always move to 20% from the left edge of the screen */
+        transform: scale(2) translateY(-50%); /* Scale and center vertically */
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1040;
+        display: none;
+    }
+
+    .modal-overlay.active {
+        display: block;
+    }
+
+    .modal-right {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        height: 100%;
+        width: 50%;
+        background: var(--dark-amethyst);
+        color: var(--text-primary);
+        box-shadow: -2px 0 5px rgba(0, 0, 0, 0.5);
+        transition: right 0.5s ease;
+        z-index: 1050;
+    }
+
+    .modal-right.active {
+        right: 0;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const planets = document.querySelectorAll('.planet');
+        const modal = document.getElementById('sessionTaskModal');
+        let overlay = document.querySelector('.modal-overlay');
+        const planetVisualization = document.getElementById('planet-visualization'); // Get the SVG graph
+
+        // Ensure overlay exists
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.classList.add('modal-overlay');
+            document.body.appendChild(overlay);
+        }
+
+        let clonedPlanet = null; // Track cloned planet
+
+        planets.forEach(planet => {
+            planet.addEventListener('click', () => {
+                // Get the SVG element position
+                const planetRect = planet.getBoundingClientRect();
+
+                // Calculate position relative to viewport
+                const startTop = planetRect.top;
+                const startLeft = planetRect.left;
+
+                console.log(`Planet clicked. Position: top=${startTop}, left=${startLeft}`);
+
+                // Hide the planet visualization (graph)
+                if (planetVisualization) {
+                    planetVisualization.style.opacity = '0';
+                    planetVisualization.style.transition = 'opacity 0.3s ease';
+                    planetVisualization.style.pointerEvents = 'none';
+                }
+
+                // Clone the planet SVG group and convert it to HTML
+                const cloneGroup = planet.cloneNode(true);
+                const svgNS = 'http://www.w3.org/2000/svg';
+                const newSvg = document.createElementNS(svgNS, 'svg');
+                newSvg.setAttribute('width', '120');
+                newSvg.setAttribute('height', '120');
+                newSvg.setAttribute('viewBox', '-50 -50 200 200');
+                newSvg.style.position = 'fixed';
+                newSvg.style.top = `${startTop}px`;
+                newSvg.style.left = `${startLeft}px`;
+                newSvg.style.zIndex = '9999';
+                newSvg.style.transition = 'top 0.5s ease, left 0.5s ease, transform 0.5s ease';
+                newSvg.style.cursor = 'pointer';
+
+                // Copy defs from the original SVG to the new one
+                const originalDefs = planetVisualization.querySelector('defs');
+                if (originalDefs) {
+                    const defsCopy = originalDefs.cloneNode(true);
+                    newSvg.appendChild(defsCopy);
+                }
+
+                // Clear the cloneGroup transform and set coordinates
+                cloneGroup.removeAttribute('transform');
+                cloneGroup.removeAttribute('data-cx');
+                cloneGroup.removeAttribute('data-cy');
+
+                // Get the planet's cx and cy attributes
+                const cx = parseFloat(planet.getAttribute('data-cx'));
+                const cy = parseFloat(planet.getAttribute('data-cy'));
+                const radius = planet.querySelector('circle')?.getAttribute('r') || 30;
+
+                // Adjust all circle and ellipse positions in cloned group to center (50, 50)
+                const circles = cloneGroup.querySelectorAll('circle');
+                const ellipses = cloneGroup.querySelectorAll('ellipse');
+                const texts = cloneGroup.querySelectorAll('text');
+
+                circles.forEach(circle => {
+                    const originalCx = parseFloat(circle.getAttribute('cx'));
+                    const originalCy = parseFloat(circle.getAttribute('cy'));
+                    const offsetX = originalCx - cx;
+                    const offsetY = originalCy - cy;
+                    circle.setAttribute('cx', 50 + offsetX);
+                    circle.setAttribute('cy', 50 + offsetY);
+                });
+
+                ellipses.forEach(ellipse => {
+                    const originalCx = parseFloat(ellipse.getAttribute('cx'));
+                    const originalCy = parseFloat(ellipse.getAttribute('cy'));
+                    const offsetX = originalCx - cx;
+                    const offsetY = originalCy - cy;
+                    ellipse.setAttribute('cx', 50 + offsetX);
+                    ellipse.setAttribute('cy', 50 + offsetY);
+                });
+
+                texts.forEach(text => {
+                    const originalX = parseFloat(text.getAttribute('x'));
+                    const originalY = parseFloat(text.getAttribute('y'));
+                    const offsetX = originalX - cx;
+                    const offsetY = originalY - cy;
+                    text.setAttribute('x', 50 + offsetX);
+                    text.setAttribute('y', 50 + offsetY);
+                });
+
+                newSvg.appendChild(cloneGroup);
+                document.body.appendChild(newSvg);
+
+                // Remove previous clone if exists
+                if (clonedPlanet) {
+                    clonedPlanet.remove();
+                }
+                clonedPlanet = newSvg;
+
+                console.log(`Cloned SVG created at top=${startTop}, left=${startLeft}`);
+
+                // Trigger animation after a brief delay
+                setTimeout(() => {
+                    const targetTop = (window.innerHeight / 2) - 60;
+                    const targetLeft = (window.innerWidth * 0.2) - 60;
+
+                    newSvg.style.top = `${targetTop}px`;
+                    newSvg.style.left = `${targetLeft}px`;
+                    newSvg.style.transform = 'scale(4)';
+
+                    console.log(`Animating to: top=${targetTop}px, left=${targetLeft}px with scale(4)`);
+                }, 10);
+
+                // Show the modal and overlay
+                modal.classList.add('active');
+                overlay.classList.add('active');
+            });
+        });
+
+        // Function to close modal and remove cloned planet
+        const closeModal = () => {
+            modal.classList.remove('active');
+            overlay.classList.remove('active');
+
+            if (clonedPlanet) {
+                clonedPlanet.style.opacity = '0';
+                clonedPlanet.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => {
+                    clonedPlanet.remove();
+                    clonedPlanet = null;
+                }, 300);
+            }
+
+            // Show the planet visualization (graph) again
+            if (planetVisualization) {
+                planetVisualization.style.opacity = '1';
+                planetVisualization.style.transition = 'opacity 0.3s ease';
+                planetVisualization.style.pointerEvents = 'auto';
+            }
+        };
+
+        // Close modal when clicking the overlay or pressing escape
+        overlay.addEventListener('click', closeModal);
+
+        modal.addEventListener('click', (e) => {
+            if (e.target.classList.contains('btn-close')) {
+                closeModal();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+    });
+</script>
