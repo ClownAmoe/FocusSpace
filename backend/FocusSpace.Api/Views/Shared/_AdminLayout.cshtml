@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — FocusSpace Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        .admin-wrapper {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .admin-header {
+            background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+            padding: 20px;
+            border-bottom: 2px solid #ff9800;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .admin-header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-header h1 {
+            font-size: 24px;
+            color: #ff9800;
+            margin: 0;
+        }
+
+        .admin-header a {
+            color: #999;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        .admin-header a:hover {
+            background-color: #333;
+            color: #fff;
+        }
+
+        .admin-content {
+            flex: 1;
+            padding: 0;
+        }
+
+        footer {
+            background-color: #1a1a1a;
+            border-top: 1px solid #333;
+            padding: 15px;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+        }
+
+        a {
+            color: #ff9800;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        a:hover {
+            color: #ffb74d;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-wrapper">
+        <header class="admin-header">
+            <div class="admin-header-content">
+                <h1>🔐 FocusSpace Admin</h1>
+                <a href="/">← Back to Home</a>
+            </div>
+        </header>
+
+        <main class="admin-content">
+            @RenderBody()
+        </main>
+
+        <footer>
+            <p>FocusSpace Admin Panel © 2026 | Stay focused, stay productive</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,35 +1,82 @@
+using DomainTask = FocusSpace.Domain.Entities.Task;
 using FocusSpace.Api.Controllers;
 using FocusSpace.Application.DTOs;
 using FocusSpace.Application.Interfaces;
+using FocusSpace.Domain.Entities;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
+using System.Security.Claims;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace FocusSpace.Tests.Controllers
 {
     public class TasksControllerTests
     {
-        private static (TasksController controller, Mock<ITaskService> serviceMock) CreateController()
+        // ── Fixture helpers ───────────────────────────────────────────
+
+        private static UserManager<User> CreateUserManager(User fakeUser)
+        {
+            var store = new Mock<IUserStore<User>>();
+
+            var userManager = new Mock<UserManager<User>>(
+                store.Object,
+                new Mock<IOptions<IdentityOptions>>().Object,
+                new Mock<IPasswordHasher<User>>().Object,
+                new IUserValidator<User>[0],
+                new IPasswordValidator<User>[0],
+                new Mock<ILookupNormalizer>().Object,
+                new Mock<IdentityErrorDescriber>().Object,
+                new Mock<IServiceProvider>().Object,
+                new Mock<ILogger<UserManager<User>>>().Object);
+
+            userManager
+                .Setup(m => m.GetUserAsync(It.IsAny<ClaimsPrincipal>()))
+                .ReturnsAsync(fakeUser);
+
+            return userManager.Object;
+        }
+
+        private static (TasksController controller, Mock<ITaskService> serviceMock)
+            CreateController(int currentUserId = 5)
         {
             var serviceMock = new Mock<ITaskService>();
             var loggerMock = new Mock<ILogger<TasksController>>();
-            var controller = new TasksController(serviceMock.Object, loggerMock.Object);
+            var fakeUser = new User { Id = currentUserId, UserName = "testuser" };
+            var userManager = CreateUserManager(fakeUser);
 
-            // TempData is null by default in unit tests — must be initialised manually
+            var controller = new TasksController(
+                serviceMock.Object,
+                userManager,
+                loggerMock.Object);
+
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(
+                        new ClaimsIdentity(
+                            new[] { new Claim(ClaimTypes.NameIdentifier, currentUserId.ToString()) },
+                            "TestAuth"))
+                }
+            };
+
             controller.TempData = new TempDataDictionary(
-                new DefaultHttpContext(),
+                controller.ControllerContext.HttpContext,
                 new Mock<ITempDataProvider>().Object);
 
             return (controller, serviceMock);
         }
 
-        private static TaskDto BuildTaskDto(int id = 1, string title = "Test") => new()
+        private static TaskDto BuildTaskDto(int id = 1, int userId = 5, string title = "Test") => new()
         {
             Id = id,
-            UserId = 1,
+            UserId = userId,
             Title = title,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -40,17 +87,14 @@ namespace FocusSpace.Tests.Controllers
         // ═════════════════════════════════════════════════════════════
 
         [Fact]
-        public async Task Index_Always_ReturnsViewWithTaskList()
+        public async System.Threading.Tasks.Task Index_Always_ReturnsViewWithTaskList()
         {
-            // Arrange
             var (controller, serviceMock) = CreateController();
-            var tasks = new[] { BuildTaskDto(1, "A"), BuildTaskDto(2, "B") };
-            serviceMock.Setup(s => s.GetTasksByUserIdAsync(It.IsAny<int>())).ReturnsAsync(tasks);
+            var tasks = new[] { BuildTaskDto(1), BuildTaskDto(2) };
+            serviceMock.Setup(s => s.GetTasksByUserIdAsync(5)).ReturnsAsync(tasks);
 
-            // Act
             var result = await controller.Index();
 
-            // Assert
             var view = Assert.IsType<ViewResult>(result);
             var model = Assert.IsAssignableFrom<IEnumerable<TaskDto>>(view.Model);
             Assert.Equal(2, model.Count());
@@ -61,32 +105,37 @@ namespace FocusSpace.Tests.Controllers
         // ═════════════════════════════════════════════════════════════
 
         [Fact]
-        public async Task Details_ExistingId_ReturnsViewWithTask()
+        public async System.Threading.Tasks.Task Details_ExistingOwnTask_ReturnsView()
         {
-            // Arrange
-            var (controller, serviceMock) = CreateController();
-            serviceMock.Setup(s => s.GetTaskByIdAsync(5)).ReturnsAsync(BuildTaskDto(5));
+            var (controller, serviceMock) = CreateController(currentUserId: 5);
+            serviceMock.Setup(s => s.GetTaskByIdAsync(1)).ReturnsAsync(BuildTaskDto(1, userId: 5));
 
-            // Act
-            var result = await controller.Details(5);
+            var result = await controller.Details(1);
 
-            // Assert
             var view = Assert.IsType<ViewResult>(result);
             var model = Assert.IsType<TaskDto>(view.Model);
-            Assert.Equal(5, model.Id);
+            Assert.Equal(1, model.Id);
         }
 
         [Fact]
-        public async Task Details_NonExistingId_ReturnsNotFound()
+        public async System.Threading.Tasks.Task Details_TaskBelongsToOtherUser_ReturnsNotFound()
         {
-            // Arrange
-            var (controller, serviceMock) = CreateController();
-            serviceMock.Setup(s => s.GetTaskByIdAsync(It.IsAny<int>())).ReturnsAsync((TaskDto?)null);
+            var (controller, serviceMock) = CreateController(currentUserId: 5);
+            serviceMock.Setup(s => s.GetTaskByIdAsync(1)).ReturnsAsync(BuildTaskDto(1, userId: 99));
 
-            // Act
+            var result = await controller.Details(1);
+
+            Assert.IsType<NotFoundResult>(result);
+        }
+
+        [Fact]
+        public async System.Threading.Tasks.Task Details_NonExistingId_ReturnsNotFound()
+        {
+            var (controller, serviceMock) = CreateController();
+            serviceMock.Setup(s => s.GetTaskByIdAsync(999)).ReturnsAsync((TaskDto?)null);
+
             var result = await controller.Details(999);
 
-            // Assert
             Assert.IsType<NotFoundResult>(result);
         }
 
@@ -97,13 +146,10 @@ namespace FocusSpace.Tests.Controllers
         [Fact]
         public void Create_Get_ReturnsView()
         {
-            // Arrange
             var (controller, _) = CreateController();
 
-            // Act
             var result = controller.Create();
 
-            // Assert
             Assert.IsType<ViewResult>(result);
         }
 
@@ -112,52 +158,45 @@ namespace FocusSpace.Tests.Controllers
         // ═════════════════════════════════════════════════════════════
 
         [Fact]
-        public async Task Create_Post_ValidDto_RedirectsToIndex()
+        public async System.Threading.Tasks.Task Create_Post_ValidDto_RedirectsToIndex()
         {
-            // Arrange
             var (controller, serviceMock) = CreateController();
             var dto = new CreateTaskDto { Title = "New task" };
-            serviceMock.Setup(s => s.CreateTaskAsync(It.IsAny<CreateTaskDto>()))
-                       .ReturnsAsync(BuildTaskDto(10, "New task"));
+            serviceMock
+                .Setup(s => s.CreateTaskAsync(It.IsAny<CreateTaskDto>()))
+                .ReturnsAsync(BuildTaskDto(10, title: "New task"));
 
-            // Act
             var result = await controller.Create(dto);
 
-            // Assert
             var redirect = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("Index", redirect.ActionName);
             serviceMock.Verify(s => s.CreateTaskAsync(It.IsAny<CreateTaskDto>()), Times.Once);
         }
 
         [Fact]
-        public async Task Create_Post_InvalidModelState_ReturnsViewWithDto()
+        public async System.Threading.Tasks.Task Create_Post_InvalidModelState_ReturnsViewWithDto()
         {
-            // Arrange
             var (controller, _) = CreateController();
             controller.ModelState.AddModelError("Title", "Required");
             var dto = new CreateTaskDto { Title = "" };
 
-            // Act
             var result = await controller.Create(dto);
 
-            // Assert
             var view = Assert.IsType<ViewResult>(result);
             Assert.Equal(dto, view.Model);
         }
 
         [Fact]
-        public async Task Create_Post_ServiceThrowsArgumentException_ReturnsViewWithError()
+        public async System.Threading.Tasks.Task Create_Post_ServiceThrowsArgumentException_ReturnsViewWithError()
         {
-            // Arrange
             var (controller, serviceMock) = CreateController();
             var dto = new CreateTaskDto { Title = "Bad" };
-            serviceMock.Setup(s => s.CreateTaskAsync(It.IsAny<CreateTaskDto>()))
-                       .ThrowsAsync(new ArgumentException("Title cannot be empty."));
+            serviceMock
+                .Setup(s => s.CreateTaskAsync(It.IsAny<CreateTaskDto>()))
+                .ThrowsAsync(new ArgumentException("Title cannot be empty."));
 
-            // Act
             var result = await controller.Create(dto);
 
-            // Assert
             var view = Assert.IsType<ViewResult>(result);
             Assert.False(controller.ModelState.IsValid);
         }
@@ -167,16 +206,14 @@ namespace FocusSpace.Tests.Controllers
         // ═════════════════════════════════════════════════════════════
 
         [Fact]
-        public async Task Edit_Get_ExistingId_ReturnsViewWithDto()
+        public async System.Threading.Tasks.Task Edit_Get_ExistingOwnTask_ReturnsViewWithDto()
         {
-            // Arrange
-            var (controller, serviceMock) = CreateController();
-            serviceMock.Setup(s => s.GetTaskByIdAsync(3)).ReturnsAsync(BuildTaskDto(3, "My task"));
+            var (controller, serviceMock) = CreateController(currentUserId: 5);
+            serviceMock.Setup(s => s.GetTaskByIdAsync(3))
+                       .ReturnsAsync(BuildTaskDto(3, userId: 5, title: "My task"));
 
-            // Act
             var result = await controller.Edit(3);
 
-            // Assert
             var view = Assert.IsType<ViewResult>(result);
             var model = Assert.IsType<UpdateTaskDto>(view.Model);
             Assert.Equal(3, model.Id);
@@ -184,16 +221,13 @@ namespace FocusSpace.Tests.Controllers
         }
 
         [Fact]
-        public async Task Edit_Get_NonExistingId_ReturnsNotFound()
+        public async System.Threading.Tasks.Task Edit_Get_NonExistingId_ReturnsNotFound()
         {
-            // Arrange
             var (controller, serviceMock) = CreateController();
-            serviceMock.Setup(s => s.GetTaskByIdAsync(It.IsAny<int>())).ReturnsAsync((TaskDto?)null);
+            serviceMock.Setup(s => s.GetTaskByIdAsync(999)).ReturnsAsync((TaskDto?)null);
 
-            // Act
             var result = await controller.Edit(999);
 
-            // Assert
             Assert.IsType<NotFoundResult>(result);
         }
 
@@ -202,62 +236,51 @@ namespace FocusSpace.Tests.Controllers
         // ═════════════════════════════════════════════════════════════
 
         [Fact]
-        public async Task Edit_Post_ValidDto_RedirectsToIndex()
+        public async System.Threading.Tasks.Task Edit_Post_ValidDto_RedirectsToIndex()
         {
-            // Arrange
-            var (controller, serviceMock) = CreateController();
+            var (controller, serviceMock) = CreateController(currentUserId: 5);
             var dto = new UpdateTaskDto { Id = 3, Title = "Updated" };
-            serviceMock.Setup(s => s.UpdateTaskAsync(dto)).ReturnsAsync(BuildTaskDto(3, "Updated"));
+            serviceMock.Setup(s => s.GetTaskByIdAsync(3)).ReturnsAsync(BuildTaskDto(3, userId: 5));
+            serviceMock.Setup(s => s.UpdateTaskAsync(dto)).ReturnsAsync(BuildTaskDto(3, title: "Updated"));
 
-            // Act
             var result = await controller.Edit(3, dto);
 
-            // Assert
             var redirect = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("Index", redirect.ActionName);
         }
 
         [Fact]
-        public async Task Edit_Post_IdMismatch_ReturnsBadRequest()
+        public async System.Threading.Tasks.Task Edit_Post_IdMismatch_ReturnsBadRequest()
         {
-            // Arrange
             var (controller, _) = CreateController();
             var dto = new UpdateTaskDto { Id = 5, Title = "Title" };
 
-            // Act
             var result = await controller.Edit(99, dto);
 
-            // Assert
             Assert.IsType<BadRequestResult>(result);
         }
 
         [Fact]
-        public async Task Edit_Post_ServiceReturnsNull_ReturnsNotFound()
+        public async System.Threading.Tasks.Task Edit_Post_TaskBelongsToOtherUser_ReturnsNotFound()
         {
-            // Arrange
-            var (controller, serviceMock) = CreateController();
+            var (controller, serviceMock) = CreateController(currentUserId: 5);
             var dto = new UpdateTaskDto { Id = 3, Title = "Title" };
-            serviceMock.Setup(s => s.UpdateTaskAsync(dto)).ReturnsAsync((TaskDto?)null);
+            serviceMock.Setup(s => s.GetTaskByIdAsync(3)).ReturnsAsync(BuildTaskDto(3, userId: 99));
 
-            // Act
             var result = await controller.Edit(3, dto);
 
-            // Assert
             Assert.IsType<NotFoundResult>(result);
         }
 
         [Fact]
-        public async Task Edit_Post_InvalidModelState_ReturnsViewWithDto()
+        public async System.Threading.Tasks.Task Edit_Post_InvalidModelState_ReturnsViewWithDto()
         {
-            // Arrange
             var (controller, _) = CreateController();
             controller.ModelState.AddModelError("Title", "Required");
             var dto = new UpdateTaskDto { Id = 3, Title = "" };
 
-            // Act
             var result = await controller.Edit(3, dto);
 
-            // Assert
             var view = Assert.IsType<ViewResult>(result);
             Assert.Equal(dto, view.Model);
         }
@@ -267,31 +290,25 @@ namespace FocusSpace.Tests.Controllers
         // ═════════════════════════════════════════════════════════════
 
         [Fact]
-        public async Task Delete_Get_ExistingId_ReturnsViewWithTask()
+        public async System.Threading.Tasks.Task Delete_Get_ExistingOwnTask_ReturnsView()
         {
-            // Arrange
-            var (controller, serviceMock) = CreateController();
-            serviceMock.Setup(s => s.GetTaskByIdAsync(2)).ReturnsAsync(BuildTaskDto(2));
+            var (controller, serviceMock) = CreateController(currentUserId: 5);
+            serviceMock.Setup(s => s.GetTaskByIdAsync(2)).ReturnsAsync(BuildTaskDto(2, userId: 5));
 
-            // Act
             var result = await controller.Delete(2);
 
-            // Assert
             var view = Assert.IsType<ViewResult>(result);
             Assert.IsType<TaskDto>(view.Model);
         }
 
         [Fact]
-        public async Task Delete_Get_NonExistingId_ReturnsNotFound()
+        public async System.Threading.Tasks.Task Delete_Get_NonExistingId_ReturnsNotFound()
         {
-            // Arrange
             var (controller, serviceMock) = CreateController();
-            serviceMock.Setup(s => s.GetTaskByIdAsync(It.IsAny<int>())).ReturnsAsync((TaskDto?)null);
+            serviceMock.Setup(s => s.GetTaskByIdAsync(999)).ReturnsAsync((TaskDto?)null);
 
-            // Act
             var result = await controller.Delete(999);
 
-            // Assert
             Assert.IsType<NotFoundResult>(result);
         }
 
@@ -300,33 +317,29 @@ namespace FocusSpace.Tests.Controllers
         // ═════════════════════════════════════════════════════════════
 
         [Fact]
-        public async Task DeleteConfirmed_ExistingTask_RedirectsToIndex()
+        public async System.Threading.Tasks.Task DeleteConfirmed_ExistingOwnTask_RedirectsToIndex()
         {
-            // Arrange
-            var (controller, serviceMock) = CreateController();
+            var (controller, serviceMock) = CreateController(currentUserId: 5);
+            serviceMock.Setup(s => s.GetTaskByIdAsync(4)).ReturnsAsync(BuildTaskDto(4, userId: 5));
             serviceMock.Setup(s => s.DeleteTaskAsync(4)).ReturnsAsync(true);
 
-            // Act
             var result = await controller.DeleteConfirmed(4);
 
-            // Assert
             var redirect = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("Index", redirect.ActionName);
             serviceMock.Verify(s => s.DeleteTaskAsync(4), Times.Once);
         }
 
         [Fact]
-        public async Task DeleteConfirmed_NonExistingTask_ReturnsNotFound()
+        public async System.Threading.Tasks.Task DeleteConfirmed_TaskBelongsToOtherUser_ReturnsNotFound()
         {
-            // Arrange
-            var (controller, serviceMock) = CreateController();
-            serviceMock.Setup(s => s.DeleteTaskAsync(It.IsAny<int>())).ReturnsAsync(false);
+            var (controller, serviceMock) = CreateController(currentUserId: 5);
+            serviceMock.Setup(s => s.GetTaskByIdAsync(4)).ReturnsAsync(BuildTaskDto(4, userId: 99));
 
-            // Act
-            var result = await controller.DeleteConfirmed(999);
+            var result = await controller.DeleteConfirmed(4);
 
-            // Assert
             Assert.IsType<NotFoundResult>(result);
+            serviceMock.Verify(s => s.DeleteTaskAsync(It.IsAny<int>()), Times.Never);
         }
     }
 }
