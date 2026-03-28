@@ -2,39 +2,167 @@
     ViewData["Title"] = "FocusSpace";
 }
 
-<div class="position-relative" style="height:80vh">
-    <svg id="planet-visualization" width="100%" height="100%">
+<div class="position-relative" style="height:100vh;min-height:600px;margin-top:100px;">
+    <svg id="planet-visualization" width="100%" height="120%" viewBox="0 0 1020 950" preserveAspectRatio="xMidYMid meet" style="overflow:visible !important;">
 
-        <line x1="100" y1="100" x2="300" y2="300" stroke="#7c3aed" stroke-width="2" />
-        <line x1="300" y1="300" x2="500" y2="150" stroke="#7c3aed" stroke-width="2" />
-        <line x1="500" y1="150" x2="700" y2="400" stroke="#7c3aed" stroke-width="2" />
+        <!-- Orbit lines -->
+        <circle cx="510" cy="360" r="130" fill="none" stroke="#7c3aed" stroke-width="1" opacity="0.3" />
+        <circle cx="510" cy="360" r="180" fill="none" stroke="#7c3aed" stroke-width="1" opacity="0.3" />
+        <circle cx="510" cy="360" r="240" fill="none" stroke="#7c3aed" stroke-width="1" opacity="0.2" />
+        <circle cx="510" cy="360" r="310" fill="none" stroke="#7c3aed" stroke-width="1" opacity="0.2" />
+        <circle cx="510" cy="360" r="380" fill="none" stroke="#7c3aed" stroke-width="1" opacity="0.15" />
 
         <!-- Планети -->
-        <g class="planet" data-name="Mercury" data-cx="100" data-cy="100">
-            <circle cx="100" cy="100" r="30" fill="#7c3aed" />
-            <text x="100" y="100" fill="#fff" text-anchor="middle" dominant-baseline="central" font-size="12">Mercury</text>
+        <defs>
+            <!-- Mercury gradient -->
+            <radialGradient id="mercuryGradient" cx="35%" cy="35%">
+                <stop offset="0%" style="stop-color:#a9a9a9;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#696969;stop-opacity:1" />
+            </radialGradient>
+            
+            <!-- Venus gradient -->
+            <radialGradient id="venusGradient" cx="35%" cy="35%">
+                <stop offset="0%" style="stop-color:#ffdd82;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#fdb813;stop-opacity:1" />
+            </radialGradient>
+            
+            <!-- Earth gradient -->
+            <radialGradient id="earthGradient" cx="35%" cy="35%">
+                <stop offset="0%" style="stop-color:#87ceeb;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#1e90ff;stop-opacity:1" />
+            </radialGradient>
+            
+            <!-- Mars gradient -->
+            <radialGradient id="marsGradient" cx="35%" cy="35%">
+                <stop offset="0%" style="stop-color:#e27b58;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#c1440e;stop-opacity:1" />
+            </radialGradient>
+
+            <!-- Jupiter gradient -->
+            <radialGradient id="jupiterGradient" cx="35%" cy="35%">
+                <stop offset="0%" style="stop-color:#c88b3a;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#8b6914;stop-opacity:1" />
+            </radialGradient>
+
+            <!-- Saturn gradient -->
+            <radialGradient id="saturnGradient" cx="35%" cy="35%">
+                <stop offset="0%" style="stop-color:#fad5a5;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#d4a574;stop-opacity:1" />
+            </radialGradient>
+
+            <!-- Uranus gradient -->
+            <radialGradient id="uranusGradient" cx="35%" cy="35%">
+                <stop offset="0%" style="stop-color:#4fd0e7;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#1fa8c7;stop-opacity:1" />
+            </radialGradient>
+
+            <!-- Neptune gradient -->
+            <radialGradient id="neptuneGradient" cx="35%" cy="35%">
+                <stop offset="0%" style="stop-color:#4166f5;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#0041b8;stop-opacity:1" />
+            </radialGradient>
+        </defs>
+
+        <!-- Сонце (center, не клікабельне) -->
+        <defs>
+            <radialGradient id="sunGradient" cx="40%" cy="40%">
+                <stop offset="0%" style="stop-color:#fdb813;stop-opacity:1" />
+                <stop offset="70%" style="stop-color:#fdb813;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#fd8813;stop-opacity:1" />
+            </radialGradient>
+        </defs>
+        <circle cx="510" cy="360" r="50" fill="url(#sunGradient)" />
+        <circle cx="510" cy="360" r="50" fill="#000" opacity="0.1" />
+
+        <!-- Планети з анімацією обертання -->
+        <g id="planets-orbit" style="animation: rotate 60s linear infinite; transform-origin: 510px 360px;">
+
+        <!-- Mercury (орбіта 130, позиція вправо) -->
+        <g class="planet" data-name="Mercury" data-cx="640" data-cy="360">
+            <circle cx="640" cy="360" r="11" fill="url(#mercuryGradient)" />
+            <circle cx="640" cy="360" r="11" fill="#000" opacity="0.15" />
         </g>
 
-        <g class="planet" data-name="Venus" data-cx="300" data-cy="300">
-            <circle cx="300" cy="300" r="30" fill="#7c3aed" />
-            <text x="300" y="300" fill="#fff" text-anchor="middle" dominant-baseline="central" font-size="12">Venus</text>
+        <!-- Venus (орбіта 180, позиція вверх-вправо) -->
+        <g class="planet" data-name="Venus" data-cx="637" data-cy="183">
+            <circle cx="637" cy="183" r="28" fill="url(#venusGradient)" />
+            <circle cx="637" cy="183" r="28" fill="#000" opacity="0.1" />
         </g>
 
-        <g class="planet" data-name="Earth" data-cx="500" data-cy="150">
-            <circle cx="500" cy="150" r="30" fill="#7c3aed" />
-            <text x="500" y="150" fill="#fff" text-anchor="middle" dominant-baseline="central" font-size="12">Earth</text>
+        <!-- Earth (орбіта 240, позиція вверх) -->
+        <g class="planet" data-name="Earth" data-cx="510" data-cy="120">
+            <circle cx="510" cy="120" r="30" fill="url(#earthGradient)" />
+            <!-- Land masses -->
+            <ellipse cx="520" cy="110" rx="8" ry="10" fill="#228b22" opacity="0.7" />
+            <ellipse cx="500" cy="125" rx="6" ry="8" fill="#228b22" opacity="0.7" />
+            <!-- Clouds -->
+            <circle cx="515" cy="115" r="3" fill="#fff" opacity="0.6" />
+            <circle cx="503" cy="120" r="2" fill="#fff" opacity="0.5" />
+            <circle cx="510" cy="95" r="2" fill="#fff" opacity="0.6" />
         </g>
 
-        <g class="planet" data-name="Mars" data-cx="700" data-cy="400">
-            <circle cx="700" cy="400" r="30" fill="#7c3aed" />
-            <text x="700" y="400" fill="#fff" text-anchor="middle" dominant-baseline="central" font-size="12">Mars</text>
+        <!-- Mars (орбіта 310, позиція вверх-влево) -->
+        <g class="planet" data-name="Mars" data-cx="383" data-cy="81">
+            <circle cx="383" cy="81" r="16" fill="url(#marsGradient)" />
+            <!-- Surface features -->
+            <circle cx="388" cy="71" r="2" fill="#8b4513" opacity="0.5" />
+            <circle cx="378" cy="86" r="1.5" fill="#8b4513" opacity="0.5" />
+            <circle cx="393" cy="91" r="1" fill="#8b4513" opacity="0.5" />
+            <circle cx="383" cy="81" r="16" fill="#000" opacity="0.1" />
+        </g>
+
+        <!-- Jupiter (орбіта 380, позиція влево) -->
+        <g class="planet" data-name="Jupiter" data-cx="130" data-cy="360">
+            <circle cx="130" cy="360" r="67" fill="url(#jupiterGradient)" />
+            <!-- Bands -->
+            <ellipse cx="130" cy="340" rx="67" ry="12" fill="#6b5310" opacity="0.5" />
+            <ellipse cx="130" cy="380" rx="67" ry="12" fill="#6b5310" opacity="0.4" />
+            <circle cx="130" cy="360" r="67" fill="#000" opacity="0.12" />
+        </g>
+
+        <!-- Saturn (орбіта 450, позиція вниз-влево) -->
+        <g class="planet" data-name="Saturn" data-cx="291" data-cy="521">
+            <!-- Ring -->
+            <ellipse cx="291" cy="521" rx="85" ry="24" fill="none" stroke="#d4a574" stroke-width="8" opacity="0.6" />
+            <!-- Planet -->
+            <circle cx="291" cy="521" r="56" fill="url(#saturnGradient)" />
+            <!-- Bands -->
+            <ellipse cx="291" cy="503" rx="56" ry="10" fill="#a0826d" opacity="0.4" />
+            <ellipse cx="291" cy="539" rx="56" ry="10" fill="#a0826d" opacity="0.3" />
+            <circle cx="291" cy="521" r="56" fill="#000" opacity="0.1" />
+        </g>
+
+        <!-- Uranus (орбіта 380, позиція вниз) -->
+        <g class="planet" data-name="Uranus" data-cx="510" data-cy="600">
+            <circle cx="510" cy="600" r="38" fill="url(#uranusGradient)" />
+            <!-- Subtle bands -->
+            <ellipse cx="510" cy="588" rx="38" ry="6" fill="#0a7a9e" opacity="0.3" />
+            <ellipse cx="510" cy="612" rx="38" ry="6" fill="#0a7a9e" opacity="0.2" />
+            <circle cx="510" cy="600" r="38" fill="#000" opacity="0.15" />
+        </g>
+
+        <!-- Neptune (орбіта 450, позиція вниз-вправо) -->
+        <g class="planet" data-name="Neptune" data-cx="729" data-cy="521">
+            <circle cx="729" cy="521" r="36" fill="url(#neptuneGradient)" />
+            <!-- Storm/feature -->
+            <ellipse cx="740" cy="514" rx="13" ry="8" fill="#2a3fa0" opacity="0.6" />
+            <!-- Bands -->
+            <ellipse cx="729" cy="504" rx="36" ry="6" fill="#003a9e" opacity="0.3" />
+            <ellipse cx="729" cy="533" rx="36" ry="6" fill="#003a9e" opacity="0.2" />
+            <circle cx="729" cy="521" r="36" fill="#000" opacity="0.15" />
         </g>
 
         <!-- Ракета -->
-        <polygon id="rocket" points="10,0 20,20 0,20"
-                 fill="#ff5722"
-                 transform="translate(90, 80)" />
-    </svg>
+        <g id="rocket" transform="translate(550, 120)">
+            <!-- Крила -->
+            <!-- Тіло ракети -->
+            <g fill="lightgray" fill-rule="evenodd" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" transform="translate(4 1)">
+                <path d="m6.5 18.5c3-2.5021966 4-5.5021966 4-9 0-3.49780342-1-6.49780342-4-9-3 2.50219658-4 5.50219658-4 9 0 3.4978034 1 6.4978034 4 9z"/>
+                <path fill="red" d="m10.0620355 13.3616971c.4244504.2452152.814833.5459803 1.1711478.9022951 1.1190122 1.1190122 1.6901459 2.5740294 1.7134011 4.3650515-2.5082701-.109848-3.88207621-.7645704-4.92553235-1.6471655m-5.11545113-3.6201811c-.42445038.2452152-.81483298.5459803-1.17114781.9022951-1.11901221 1.1190122-1.6901459 2.5740294-1.71340106 4.3650515 2.50827003-.109848 3.88207616-.7645704 4.9255323-1.6471655"/>
+                <circle cx="6.5" cy="6.5" r="2" fill="cyan"/>
+            </g>
+        </g>
+        </g>
 </div>
 
 @if (!User.Identity!.IsAuthenticated)
@@ -55,46 +183,186 @@
 else
 {
     <div class="text-center mt-4">
-        <h2 class="mb-3">Welcome back, @User.Identity.Name!</h2>
+        @* <h2 class="mb-3">Welcome back, @User.Identity.Name!</h2>
         <a asp-controller="Tasks" asp-action="Index" class="btn btn-primary btn-lg">
             Go to My Tasks
-        </a>
+        </a> *@
     </div>
 }
+
+<style>
+    @@keyframes rotate {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
 
 @section Scripts {
     <script>
         const rocket = document.getElementById('rocket');
-        let currentX = 90, currentY = 80;
+        const planetsOrbit = document.getElementById('planets-orbit');
+        const svgElement = document.getElementById('planet-visualization');
+        const svgRect = svgElement.getBoundingClientRect();
+        const viewBox = svgElement.getAttribute('viewBox').split(' ').map(Number);
+        const scaleX = svgRect.width / (viewBox[2] - viewBox[0]);
+        const scaleY = svgRect.height / (viewBox[3] - viewBox[1]);
+        
+        let currentX = 550, currentY = 120;
+        let isAnimating = false;
+        let currentRotation = 0;
+        let currentTargetPlanet = null; // Track which planet rocket is orbiting
+        let orbitAnimationId = null; // Track animation frame ID to cancel if needed
+
+        function getOrbitRotation() {
+            const transform = planetsOrbit.getAttribute('style');
+            const rotateMatch = transform.match(/rotate\s*\(\s*([0-9.]+)/);
+            return rotateMatch ? parseFloat(rotateMatch[1]) : 0;
+        }
+
+        function getActualPlanetPosition(planet) {
+            const cx = parseFloat(planet.dataset.cx);
+            const cy = parseFloat(planet.dataset.cy);
+            const orbitRotation = getOrbitRotation() * Math.PI / 180;
+            const centerX = 510;
+            const centerY = 360;
+            
+            const dx = cx - centerX;
+            const dy = cy - centerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx) + orbitRotation;
+            
+            const newCx = centerX + distance * Math.cos(angle);
+            const newCy = centerY + distance * Math.sin(angle);
+            
+            return { x: newCx, y: newCy };
+        }
+
+        function updateRocketRotation(targetX, targetY) {
+            const dx = targetX - currentX;
+            const dy = targetY - currentY;
+            const angle = Math.atan2(dy, dx) * 180 / Math.PI + 90;
+            currentRotation = angle;
+            rocket.setAttribute('transform', `translate(${currentX}, ${currentY}) rotate(${angle})`);
+        }
+
+        // Generic orbit function that works for any planet
+        function orbitAroundPlanet(planet, orbitRadius = null) {
+            // Cancel any previous orbit animation
+            if (orbitAnimationId !== null) {
+                cancelAnimationFrame(orbitAnimationId);
+            }
+            
+            // Calculate orbit radius based on planet size if not provided
+            if (orbitRadius === null) {
+                if (!planet) {
+                    // Earth - get its radius from the SVG circle
+                    const earthCircle = document.querySelector('[data-name="Earth"] circle');
+                    const planetRadius = earthCircle ? parseFloat(earthCircle.getAttribute('r')) : 30;
+                    orbitRadius = planetRadius + 15; // Orbit at planet radius + 35px
+                } else {
+                    // Other planets - get radius from their circle element
+                    const planetCircle = planet.querySelector('circle');
+                    const planetRadius = planetCircle ? parseFloat(planetCircle.getAttribute('r')) : 30;
+                    orbitRadius = planetRadius + 25; // Orbit at planet radius + 35px
+                }
+            }
+            
+            const orbitDuration = 2000; // 2 seconds per orbit
+            let startTime = null;
+            
+            function animateOrbit(currentTime) {
+                if (!startTime) {
+                    startTime = currentTime;
+                }
+                
+                // If not animating to another planet, update rocket position
+                if (!isAnimating) {
+                    const elapsed = currentTime - startTime;
+                    const progress = (elapsed % orbitDuration) / orbitDuration; // Loop indefinitely
+                    
+                    // Get the planet's current position (accounting for its own orbit)
+                    const planetPos = planet ? getActualPlanetPosition(planet) : { x: 510, y: 120 };
+                    const centerX = planetPos.x;
+                    const centerY = planetPos.y;
+                    
+                    const angle = progress * Math.PI * 2;
+                    const orbitX = centerX + orbitRadius * Math.cos(angle);
+                    const orbitY = centerY + orbitRadius * Math.sin(angle);
+                    
+                    // Get next position to calculate movement direction
+                    const nextAngle = angle + 0.01;
+                    const nextX = centerX + orbitRadius * Math.cos(nextAngle);
+                    const nextY = centerY + orbitRadius * Math.sin(nextAngle);
+                    
+                    const dx = nextX - orbitX;
+                    const dy = nextY - orbitY;
+                    const rocketAngle = Math.atan2(dy, dx) * 180 / Math.PI + 90;
+                    
+                    currentX = orbitX;
+                    currentY = orbitY;
+                    currentRotation = rocketAngle;
+                    
+                    rocket.setAttribute('transform', `translate(${orbitX}, ${orbitY}) rotate(${rocketAngle})`);
+                }
+                
+                // Always continue the animation loop
+                orbitAnimationId = requestAnimationFrame(animateOrbit);
+            }
+            
+            orbitAnimationId = requestAnimationFrame(animateOrbit);
+        }
+
+        // Start initial orbit around Earth (null = Earth)
+        orbitAroundPlanet(null);
 
         document.querySelectorAll('.planet').forEach(planet => {
             planet.style.cursor = 'pointer';
+            let currentAnimation = null;
 
             planet.addEventListener('mouseenter', () => {
-                const cx = parseFloat(planet.dataset.cx) - 10;
-                const cy = parseFloat(planet.dataset.cy) - 20;
+                if (isAnimating) return;
+                
+                isAnimating = true;
+                const actualPos = getActualPlanetPosition(planet);
+                const cx = actualPos.x;
+                const cy = actualPos.y;
 
-                rocket.animate([
-                    { transform: `translate(${currentX}px, ${currentY}px)` },
-                    { transform: `translate(${cx}px, ${cy}px)` }
+                // Calculate angle to planet
+                const dx = cx - currentX;
+                const dy = cy - currentY;
+                const targetAngle = Math.atan2(dy, dx) * 180 / Math.PI + 90;
+
+                // Cancel previous animation if exists
+                if (currentAnimation) {
+                    currentAnimation.cancel();
+                }
+
+                currentAnimation = rocket.animate([
+                    { transform: `translate(${currentX}px, ${currentY}px) rotate(${currentRotation}deg)` },
+                    { transform: `translate(${cx}px, ${cy}px) rotate(${targetAngle}deg)` }
                 ], {
                     duration: 800,
                     easing: 'ease-in-out',
-                    fill: 'forwards'
-                }).onfinish = () => {
+                    fill: 'none' // Don't keep animation applied
+                });
+
+                currentAnimation.onfinish = () => {
                     currentX = cx;
                     currentY = cy;
-                    rocket.setAttribute('transform', `translate(${cx}, ${cy})`);
+                    currentRotation = targetAngle;
+                    rocket.setAttribute('transform', `translate(${cx}, ${cy}) rotate(${targetAngle})`);
+                    currentTargetPlanet = planet;
+                    isAnimating = false;
+                    // Start orbiting the new planet
+                    orbitAroundPlanet(planet);
                 };
             });
 
-            // Підсвічування при hover
-            planet.addEventListener('mouseenter', () => {
-                planet.querySelector('circle').setAttribute('fill', '#a78bfa');
-            });
-            planet.addEventListener('mouseleave', () => {
-                planet.querySelector('circle').setAttribute('fill', '#7c3aed');
-            });
+
         });
     </script>
 }
