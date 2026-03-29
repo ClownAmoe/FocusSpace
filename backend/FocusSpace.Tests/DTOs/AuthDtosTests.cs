@@ -245,5 +245,230 @@ namespace FocusSpace.Tests.DTOs
             // Assert
             Assert.True(dto.RememberMe);
         }
+
+        // ═════════════════════════════════════════════════════════════
+        // ForgotPasswordDto
+        // ═════════════════════════════════════════════════════════════
+
+        [Fact]
+        public void ForgotPasswordDto_ValidEmail_PassesValidation()
+        {
+            // Arrange
+            var dto = new ForgotPasswordDto { Email = "test@example.com" };
+
+            // Act
+            var context = new ValidationContext(dto);
+            var results = new List<ValidationResult>();
+            var isValid = Validator.TryValidateObject(dto, context, results, true);
+
+            // Assert
+            Assert.True(isValid, string.Join(", ", results.Select(r => r.ErrorMessage)));
+        }
+
+        [Fact]
+        public void ForgotPasswordDto_InvalidEmail_FailsValidation()
+        {
+            // Arrange
+            var dto = new ForgotPasswordDto { Email = "not-an-email" };
+
+            // Act
+            var context = new ValidationContext(dto);
+            var results = new List<ValidationResult>();
+            Validator.TryValidateObject(dto, context, results, true);
+
+            // Assert
+            Assert.NotEmpty(results);
+        }
+
+        [Fact]
+        public void ForgotPasswordDto_MissingEmail_FailsValidation()
+        {
+            // Arrange
+#pragma warning disable CS8625
+            var dto = new ForgotPasswordDto { Email = null };
+#pragma warning restore CS8625
+
+            // Act
+            var context = new ValidationContext(dto);
+            var results = new List<ValidationResult>();
+            Validator.TryValidateObject(dto, context, results, true);
+
+            // Assert
+            Assert.NotEmpty(results);
+        }
+
+        [Fact]
+        public void ForgotPasswordDto_EmptyEmail_FailsValidation()
+        {
+            // Arrange
+            var dto = new ForgotPasswordDto { Email = string.Empty };
+
+            // Act
+            var context = new ValidationContext(dto);
+            var results = new List<ValidationResult>();
+            Validator.TryValidateObject(dto, context, results, true);
+
+            // Assert
+            Assert.NotEmpty(results);
+        }
+
+        // ═════════════════════════════════════════════════════════════
+        // ResetPasswordDto
+        // ═════════════════════════════════════════════════════════════
+
+        [Fact]
+        public void ResetPasswordDto_ValidData_PassesValidation()
+        {
+            // Arrange
+            var dto = new ResetPasswordDto
+            {
+                UserId = "123",
+                Token = "reset-token",
+                NewPassword = "SecurePass123!",
+                ConfirmPassword = "SecurePass123!"
+            };
+
+            // Act
+            var context = new ValidationContext(dto);
+            var results = new List<ValidationResult>();
+            var isValid = Validator.TryValidateObject(dto, context, results, true);
+
+            // Assert
+            Assert.True(isValid, string.Join(", ", results.Select(r => r.ErrorMessage)));
+        }
+
+        [Fact]
+        public void ResetPasswordDto_MissingUserId_FailsValidation()
+        {
+            // Arrange
+#pragma warning disable CS8625
+            var dto = new ResetPasswordDto
+            {
+                UserId = null,
+                Token = "reset-token",
+                NewPassword = "SecurePass123!",
+                ConfirmPassword = "SecurePass123!"
+            };
+#pragma warning restore CS8625
+
+            // Act
+            var context = new ValidationContext(dto);
+            var results = new List<ValidationResult>();
+            Validator.TryValidateObject(dto, context, results, true);
+
+            // Assert
+            Assert.NotEmpty(results);
+        }
+
+        [Fact]
+        public void ResetPasswordDto_MissingToken_FailsValidation()
+        {
+            // Arrange
+#pragma warning disable CS8625
+            var dto = new ResetPasswordDto
+            {
+                UserId = "123",
+                Token = null,
+                NewPassword = "SecurePass123!",
+                ConfirmPassword = "SecurePass123!"
+            };
+#pragma warning restore CS8625
+
+            // Act
+            var context = new ValidationContext(dto);
+            var results = new List<ValidationResult>();
+            Validator.TryValidateObject(dto, context, results, true);
+
+            // Assert
+            Assert.NotEmpty(results);
+        }
+
+        [Fact]
+        public void ResetPasswordDto_PasswordTooShort_FailsValidation()
+        {
+            // Arrange
+            var dto = new ResetPasswordDto
+            {
+                UserId = "123",
+                Token = "reset-token",
+                NewPassword = "short",
+                ConfirmPassword = "short"
+            };
+
+            // Act
+            var context = new ValidationContext(dto);
+            var results = new List<ValidationResult>();
+            Validator.TryValidateObject(dto, context, results, true);
+
+            // Assert
+            Assert.NotEmpty(results);
+        }
+
+        [Fact]
+        public void ResetPasswordDto_PasswordsDoNotMatch_FailsValidation()
+        {
+            // Arrange
+            var dto = new ResetPasswordDto
+            {
+                UserId = "123",
+                Token = "reset-token",
+                NewPassword = "SecurePass123!",
+                ConfirmPassword = "DifferentPass123!"
+            };
+
+            // Act
+            var context = new ValidationContext(dto);
+            var results = new List<ValidationResult>();
+            Validator.TryValidateObject(dto, context, results, true);
+
+            // Assert
+            Assert.NotEmpty(results);
+        }
+
+        [Fact]
+        public void ResetPasswordDto_MissingNewPassword_FailsValidation()
+        {
+            // Arrange
+#pragma warning disable CS8625
+            var dto = new ResetPasswordDto
+            {
+                UserId = "123",
+                Token = "reset-token",
+                NewPassword = null,
+                ConfirmPassword = "SecurePass123!"
+            };
+#pragma warning restore CS8625
+
+            // Act
+            var context = new ValidationContext(dto);
+            var results = new List<ValidationResult>();
+            Validator.TryValidateObject(dto, context, results, true);
+
+            // Assert
+            Assert.NotEmpty(results);
+        }
+
+        [Fact]
+        public void ResetPasswordDto_MissingConfirmPassword_FailsValidation()
+        {
+            // Arrange
+#pragma warning disable CS8625
+            var dto = new ResetPasswordDto
+            {
+                UserId = "123",
+                Token = "reset-token",
+                NewPassword = "SecurePass123!",
+                ConfirmPassword = null
+            };
+#pragma warning restore CS8625
+
+            // Act
+            var context = new ValidationContext(dto);
+            var results = new List<ValidationResult>();
+            Validator.TryValidateObject(dto, context, results, true);
+
+            // Assert
+            Assert.NotEmpty(results);
+        }
     }
 }

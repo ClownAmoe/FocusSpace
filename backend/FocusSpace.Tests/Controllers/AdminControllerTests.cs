@@ -371,5 +371,210 @@ namespace FocusSpace.Tests.Controllers
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
             Assert.NotNull(badRequestResult.Value);
         }
+
+        // ═════════════════════════════════════════════════════════════
+        // Index
+        // ═════════════════════════════════════════════════════════════
+
+        [Fact]
+        public async Task Index_ReturnsViewWithStatistics()
+        {
+            // Arrange
+            var context = new AppDbContext(CreateInMemoryOptions());
+            var currentUser = BuildUser(999, "admin@example.com", true);
+            var userManager = CreateUserManager(currentUser);
+            var controller = CreateController(context, userManager, currentUser);
+
+            // Act
+            var result = await controller.Index();
+
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            Assert.Null(viewResult.ViewName);
+            Assert.NotNull(viewResult.ViewData);
+        }
+
+        [Fact]
+        public async Task Index_SetsCorrectViewBagValues()
+        {
+            // Arrange
+            var context = new AppDbContext(CreateInMemoryOptions());
+            var currentUser = BuildUser(999, "admin@example.com", true);
+            var userManager = CreateUserManager(currentUser);
+            var controller = CreateController(context, userManager, currentUser);
+
+            // Act
+            var result = await controller.Index();
+
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            Assert.NotNull(viewResult.ViewData["TotalUsers"]);
+            Assert.NotNull(viewResult.ViewData["ActiveTasks"]);
+            Assert.NotNull(viewResult.ViewData["ActiveSessions"]);
+            Assert.NotNull(viewResult.ViewData["BlockedUsers"]);
+            Assert.NotNull(viewResult.ViewData["PendingApproval"]);
+        }
+
+        // ═════════════════════════════════════════════════════════════
+        // GetUsers
+        // ═════════════════════════════════════════════════════════════
+
+        [Fact]
+        public async Task GetUsers_NoUsers_ReturnsEmptyArray()
+        {
+            // Arrange
+            var context = new AppDbContext(CreateInMemoryOptions());
+            var currentUser = BuildUser(999, "admin@example.com", true);
+            var userManager = CreateUserManager(currentUser);
+            var controller = CreateController(context, userManager, currentUser);
+
+            // Act
+            var result = await controller.GetUsers();
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+        }
+
+        [Fact]
+        public async Task GetUsers_WithUsers_ReturnsUserData()
+        {
+            // Arrange
+            var context = new AppDbContext(CreateInMemoryOptions());
+            var currentUser = BuildUser(999, "admin@example.com", true);
+            var userManager = CreateUserManager(currentUser);
+            var user = BuildUser(100, "user@example.com", false);
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
+
+            var controller = CreateController(context, userManager, currentUser);
+
+            // Act
+            var result = await controller.GetUsers();
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+        }
+
+        // ═════════════════════════════════════════════════════════════
+        // Additional Edge Cases
+        // ═════════════════════════════════════════════════════════════
+
+        [Fact]
+        public async Task ApproveUser_UpdateFails_ReturnsBadRequest()
+        {
+            // Arrange
+            var user = BuildUser(2, "user2@example.com");
+            var userManagerMock = new Mock<UserManager<User>>(
+                new Mock<IUserStore<User>>().Object,
+                new Mock<IOptions<IdentityOptions>>().Object,
+                new Mock<IPasswordHasher<User>>().Object,
+                new IUserValidator<User>[0],
+                new IPasswordValidator<User>[0],
+                new Mock<ILookupNormalizer>().Object,
+                new Mock<IdentityErrorDescriber>().Object,
+                new Mock<IServiceProvider>().Object,
+                new Mock<ILogger<UserManager<User>>>().Object);
+
+            userManagerMock
+                .Setup(m => m.FindByIdAsync("2"))
+                .ReturnsAsync(user);
+
+            var errorResult = IdentityResult.Failed(new IdentityError { Description = "Update failed" });
+            userManagerMock
+                .Setup(m => m.UpdateAsync(It.IsAny<User>()))
+                .ReturnsAsync(errorResult);
+
+            var context = new AppDbContext(CreateInMemoryOptions());
+            var controller = CreateController(context, userManagerMock.Object);
+
+            // Act
+            var result = await controller.ApproveUser(2);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.NotNull(badRequestResult.Value);
+        }
+
+        [Fact]
+        public async Task BlockUser_ValidUser_UpdatesIsBlocked()
+        {
+            // Arrange
+            var targetUser = BuildUser(3, "target@example.com");
+            var currentUser = BuildUser(1, "admin@example.com");
+
+            var userManagerMock = new Mock<UserManager<User>>(
+                new Mock<IUserStore<User>>().Object,
+                new Mock<IOptions<IdentityOptions>>().Object,
+                new Mock<IPasswordHasher<User>>().Object,
+                new IUserValidator<User>[0],
+                new IPasswordValidator<User>[0],
+                new Mock<ILookupNormalizer>().Object,
+                new Mock<IdentityErrorDescriber>().Object,
+                new Mock<IServiceProvider>().Object,
+                new Mock<ILogger<UserManager<User>>>().Object);
+
+            userManagerMock
+                .Setup(m => m.FindByIdAsync("3"))
+                .ReturnsAsync(targetUser);
+
+            userManagerMock
+                .Setup(m => m.GetUserAsync(It.IsAny<System.Security.Claims.ClaimsPrincipal>()))
+                .ReturnsAsync(currentUser);
+
+            userManagerMock
+                .Setup(m => m.UpdateAsync(It.IsAny<User>()))
+                .Returns(Task.FromResult(IdentityResult.Success));
+
+            var context = new AppDbContext(CreateInMemoryOptions());
+            var controller = CreateController(context, userManagerMock.Object, currentUser);
+
+            // Act
+            var result = await controller.BlockUser(3);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.NotNull(okResult.Value);
+        }
+
+        [Fact]
+        public async Task UnblockUser_AlreadyUnblocked_ReturnsOk()
+        {
+            // Arrange
+            var unblockedUser = BuildUser(4, "unblocked@example.com");
+            unblockedUser.IsBlocked = false;
+            var currentUser = BuildUser(1, "admin@example.com");
+
+            var userManagerMock = new Mock<UserManager<User>>(
+                new Mock<IUserStore<User>>().Object,
+                new Mock<IOptions<IdentityOptions>>().Object,
+                new Mock<IPasswordHasher<User>>().Object,
+                new IUserValidator<User>[0],
+                new IPasswordValidator<User>[0],
+                new Mock<ILookupNormalizer>().Object,
+                new Mock<IdentityErrorDescriber>().Object,
+                new Mock<IServiceProvider>().Object,
+                new Mock<ILogger<UserManager<User>>>().Object);
+
+            userManagerMock
+                .Setup(m => m.FindByIdAsync("4"))
+                .ReturnsAsync(unblockedUser);
+
+            userManagerMock
+                .Setup(m => m.UpdateAsync(It.IsAny<User>()))
+                .ReturnsAsync(IdentityResult.Success);
+
+            var context = new AppDbContext(CreateInMemoryOptions());
+            var controller = CreateController(context, userManagerMock.Object, currentUser);
+
+            // Act
+            var result = await controller.UnblockUser(4);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.NotNull(okResult.Value);
+        }
     }
 }
+
