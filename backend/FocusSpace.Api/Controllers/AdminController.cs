@@ -8,9 +8,7 @@ using DomainTask = FocusSpace.Domain.Entities.Task;
 
 namespace FocusSpace.Api.Controllers
 {
-    /// <summary>
-    /// Admin panel — accessible only to users in the "Admin" role.
-    /// </summary>
+   
     [Authorize(Roles = "Admin")]
     public class AdminController : Controller
     {
@@ -28,7 +26,7 @@ namespace FocusSpace.Api.Controllers
             _logger = logger;
         }
 
-        // GET /Admin
+      
         public async Task<IActionResult> Index()
         {
             _logger.LogInformation("Admin panel accessed by {User}", User.Identity?.Name);
@@ -44,7 +42,7 @@ namespace FocusSpace.Api.Controllers
             return View();
         }
 
-        // GET /Admin/GetUsers
+       
         [HttpGet]
         public async Task<IActionResult> GetUsers()
         {
@@ -66,8 +64,9 @@ namespace FocusSpace.Api.Controllers
             return Json(users);
         }
 
-        // POST /Admin/ApproveUser/{id}
+      
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ApproveUser(int id)
         {
             var user = await _userManager.FindByIdAsync(id.ToString());
@@ -86,18 +85,23 @@ namespace FocusSpace.Api.Controllers
             return Ok(new { message = $"User {user.Email} has been approved." });
         }
 
-        // POST /Admin/BlockUser/{id}
+       
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> BlockUser(int id)
         {
             var user = await _userManager.FindByIdAsync(id.ToString());
             if (user is null)
                 return NotFound(new { message = "User not found." });
 
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser.Id == id)
+                return BadRequest(new { message = "Cannot block yourself." });
+
             user.IsBlocked = true;
             await _userManager.UpdateAsync(user);
 
-            // Force sign-out by updating the security stamp
+            
             await _userManager.UpdateSecurityStampAsync(user);
 
             _logger.LogWarning("User {UserId} ({Email}) blocked by {Admin}",
@@ -106,8 +110,9 @@ namespace FocusSpace.Api.Controllers
             return Ok(new { message = $"User {user.Email} has been blocked." });
         }
 
-        // POST /Admin/UnblockUser/{id}
+    
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> UnblockUser(int id)
         {
             var user = await _userManager.FindByIdAsync(id.ToString());
@@ -123,13 +128,18 @@ namespace FocusSpace.Api.Controllers
             return Ok(new { message = $"User {user.Email} has been unblocked." });
         }
 
-        // POST /Admin/PromoteToAdmin/{id}
+     
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> PromoteToAdmin(int id)
         {
             var user = await _userManager.FindByIdAsync(id.ToString());
             if (user is null)
                 return NotFound(new { message = "User not found." });
+
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser.Id == id)
+                return BadRequest(new { message = "Cannot promote yourself." });
 
             if (await _userManager.IsInRoleAsync(user, "Admin"))
                 return BadRequest(new { message = "User is already an admin." });
@@ -143,6 +153,29 @@ namespace FocusSpace.Api.Controllers
                 user.Id, User.Identity?.Name);
 
             return Ok(new { message = $"User {user.Email} has been promoted to Admin." });
+        }
+
+      
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            var user = await _userManager.FindByIdAsync(id.ToString());
+            if (user is null)
+                return NotFound(new { message = "User not found." });
+
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser.Id == id)
+                return BadRequest(new { message = "Cannot delete yourself." });
+
+            var result = await _userManager.DeleteAsync(user);
+            if (!result.Succeeded)
+                return BadRequest(new { message = "Failed to delete user." });
+
+            _logger.LogWarning("User {UserId} ({Email}) deleted by {Admin}",
+                user.Id, user.Email, User.Identity?.Name);
+
+            return Ok(new { message = $"User {user.Email} has been deleted." });
         }
     }
 }
