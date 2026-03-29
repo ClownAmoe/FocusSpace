@@ -178,7 +178,7 @@ namespace FocusSpace.Tests.Interfaces
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task TaskRepository_Mock_VerifyMethodNeverCalled()
+        public System.Threading.Tasks.Task TaskRepository_Mock_VerifyMethodNeverCalled()
         {
             // Arrange
             var mockRepo = new Mock<ITaskRepository>();
@@ -187,6 +187,7 @@ namespace FocusSpace.Tests.Interfaces
 
             // Assert
             mockRepo.Verify(r => r.ExistsAsync(It.IsAny<int>()), Times.Never);
+            return System.Threading.Tasks.Task.CompletedTask;
         }
 
         [Fact]
