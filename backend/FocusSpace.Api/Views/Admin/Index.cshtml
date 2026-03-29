@@ -34,7 +34,7 @@
 
     .footer-info { text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #333; color: #999; font-size: 12px; }
 
-    /* Modal */
+   
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
     .modal-overlay.active { display: flex; }
     .modal-content { background-color: #1e1e1e; border-radius: 10px; width: 90%; max-width: 750px; max-height: 80vh; overflow-y: auto; border: 2px solid #ff9800; box-shadow: 0 0 30px rgba(255,152,0,0.3); }
@@ -44,12 +44,12 @@
     .modal-close:hover { color: #fff; }
     .modal-body { padding: 20px; }
 
-    /* Tabs */
+   
     .tab-buttons { display: flex; gap: 10px; margin-bottom: 20px; }
     .tab-btn { padding: 8px 16px; border: 1px solid #444; border-radius: 6px; background: #2a2a2a; color: #ccc; cursor: pointer; font-size: 13px; transition: all 0.2s; }
     .tab-btn.active { background: #ff9800; color: #000; border-color: #ff9800; font-weight: bold; }
 
-    /* User items */
+    
     .user-item { background-color: #252525; padding: 15px; margin-bottom: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: flex-start; border-left: 4px solid #4caf50; }
     .user-item.blocked { border-left-color: #f44336; opacity: 0.7; }
     .user-item.pending-approval { border-left-color: #2196f3; }
@@ -112,7 +112,6 @@
     </div>
 </div>
 
-<!-- Users Modal -->
 <div class="modal-overlay" id="usersModal">
     <div class="modal-content">
         <div class="modal-header">
@@ -204,6 +203,8 @@
 
             const promoteBtn = `<button class="btn btn-small btn-info" onclick="promoteToAdmin(${u.id})" title="Promote to Admin">Make Admin</button>`;
 
+            const deleteBtn = `<button class="btn btn-small btn-danger" onclick="deleteUser(${u.id})" title="Delete User">Delete</button>`;
+
             return `
                 <div class="user-item ${rowClass}" id="row-${u.id}">
                     <div class="user-info">
@@ -220,6 +221,7 @@
                         ${approveBtn}
                         ${blockBtn}
                         ${promoteBtn}
+                        ${deleteBtn}
                     </div>
                 </div>`;
         }).join('');
@@ -261,6 +263,17 @@
     async function promoteToAdmin(id) {
         if (!confirm('Promote this user to Admin? This grants full admin access.')) return;
         const r = await fetch(`/Admin/PromoteToAdmin/${id}`, {
+            method: 'POST',
+            headers: { 'RequestVerificationToken': getToken() }
+        });
+        const d = await r.json();
+        alert(d.message);
+        loadUsers();
+    }
+
+    async function deleteUser(id) {
+        if (!confirm('Delete this user permanently? This action cannot be undone.')) return;
+        const r = await fetch(`/Admin/DeleteUser/${id}`, {
             method: 'POST',
             headers: { 'RequestVerificationToken': getToken() }
         });
