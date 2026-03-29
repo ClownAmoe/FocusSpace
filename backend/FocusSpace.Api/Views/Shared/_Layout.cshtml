@@ -467,10 +467,11 @@
             </div>
             <div class="col-md-6">
                 <h6>Create Session</h6>
-                <form asp-controller="Session" asp-action="Start" method="post">
+                <form onsubmit="startSessionFromModal(event)">
                     <div class="mb-3">
                         <label for="sessionDuration" class="form-label">Planned Duration</label>
-                        <input type="text" id="sessionDuration" name="PlannedDuration" class="form-control" placeholder="HH:MM:SS">
+                        <input type="text" id="sessionDuration" name="PlannedDuration"
+                               class="form-control" placeholder="HH:MM:SS">
                     </div>
                     <button type="submit" class="btn btn-primary">Start Session</button>
                 </form>
@@ -688,4 +689,27 @@
             }
         });
     });
+
+    async function startSessionFromModal(e) {
+        e.preventDefault();
+        const duration = document.getElementById('sessionDuration').value;
+        if (!duration) return;
+
+        const taskSelect = document.getElementById('taskSelect');
+        const taskId = taskSelect && taskSelect.value ? parseInt(taskSelect.value) : null;
+
+        const res = await fetch('/Session/Start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                taskId: taskId,
+                plannedDuration: duration
+            })
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            window.location.href = `/Session?sessionId=${data.sessionId}&duration=${encodeURIComponent(duration)}`;
+        }
+    }
 </script>
