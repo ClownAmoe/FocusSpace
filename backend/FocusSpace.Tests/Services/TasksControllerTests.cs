@@ -273,16 +273,31 @@ namespace FocusSpace.Tests.Controllers
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task Edit_Post_InvalidModelState_ReturnsViewWithDto()
+        public async System.Threading.Tasks.Task Edit_Post_ServiceReturnsNull_ReturnsNotFound()
         {
-            var (controller, _) = CreateController();
-            controller.ModelState.AddModelError("Title", "Required");
+            var (controller, serviceMock) = CreateController(currentUserId: 5);
+            var dto = new UpdateTaskDto { Id = 3, Title = "Title" };
+            serviceMock.Setup(s => s.GetTaskByIdAsync(3)).ReturnsAsync(BuildTaskDto(3, userId: 5));
+            serviceMock.Setup(s => s.UpdateTaskAsync(dto)).ReturnsAsync((TaskDto?)null);
+
+            var result = await controller.Edit(3, dto);
+
+            Assert.IsType<NotFoundResult>(result);
+        }
+
+        [Fact]
+        public async System.Threading.Tasks.Task Edit_Post_ServiceThrowsArgumentException_ReturnsViewWithError()
+        {
+            var (controller, serviceMock) = CreateController(currentUserId: 5);
             var dto = new UpdateTaskDto { Id = 3, Title = "" };
+            serviceMock.Setup(s => s.GetTaskByIdAsync(3)).ReturnsAsync(BuildTaskDto(3, userId: 5));
+            serviceMock.Setup(s => s.UpdateTaskAsync(It.IsAny<UpdateTaskDto>()))
+                       .ThrowsAsync(new ArgumentException("Title cannot be empty."));
 
             var result = await controller.Edit(3, dto);
 
             var view = Assert.IsType<ViewResult>(result);
-            Assert.Equal(dto, view.Model);
+            Assert.False(controller.ModelState.IsValid);
         }
 
         // ═════════════════════════════════════════════════════════════
@@ -312,6 +327,17 @@ namespace FocusSpace.Tests.Controllers
             Assert.IsType<NotFoundResult>(result);
         }
 
+        [Fact]
+        public async System.Threading.Tasks.Task Delete_Get_TaskBelongsToOtherUser_ReturnsNotFound()
+        {
+            var (controller, serviceMock) = CreateController(currentUserId: 5);
+            serviceMock.Setup(s => s.GetTaskByIdAsync(2)).ReturnsAsync(BuildTaskDto(2, userId: 99));
+
+            var result = await controller.Delete(2);
+
+            Assert.IsType<NotFoundResult>(result);
+        }
+
         // ═════════════════════════════════════════════════════════════
         // DeleteConfirmed POST
         // ═════════════════════════════════════════════════════════════
@@ -337,6 +363,18 @@ namespace FocusSpace.Tests.Controllers
             serviceMock.Setup(s => s.GetTaskByIdAsync(4)).ReturnsAsync(BuildTaskDto(4, userId: 99));
 
             var result = await controller.DeleteConfirmed(4);
+
+            Assert.IsType<NotFoundResult>(result);
+            serviceMock.Verify(s => s.DeleteTaskAsync(It.IsAny<int>()), Times.Never);
+        }
+
+        [Fact]
+        public async System.Threading.Tasks.Task DeleteConfirmed_NonExistingId_ReturnsNotFound()
+        {
+            var (controller, serviceMock) = CreateController();
+            serviceMock.Setup(s => s.GetTaskByIdAsync(999)).ReturnsAsync((TaskDto?)null);
+
+            var result = await controller.DeleteConfirmed(999);
 
             Assert.IsType<NotFoundResult>(result);
             serviceMock.Verify(s => s.DeleteTaskAsync(It.IsAny<int>()), Times.Never);
