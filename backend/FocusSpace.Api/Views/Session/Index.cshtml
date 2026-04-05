@@ -74,7 +74,6 @@
         let isPaused = false;
 
         document.addEventListener('DOMContentLoaded', async () => {
-            // Завантажуємо таски у селект
             try {
                 const res = await fetch('/Tasks/GetUserTasks');
                 if (!res.ok) return;
@@ -88,36 +87,6 @@
                 });
             } catch (e) {
                 console.error('Failed to load tasks:', e);
-            }
-
-            const params = new URLSearchParams(window.location.search);
-            const sessionId = params.get('sessionId');
-            const duration = params.get('duration');    
-            const taskLabel = params.get('taskLabel');  
-
-            if (sessionId && duration) {
-                const parts = duration.split(':');
-                const hours = parseInt(parts[0]) || 0;
-                const mins = parseInt(parts[1]) || 0;
-                const secs = parseInt(parts[2]) || 0;
-                const totalMins = hours * 60 + mins + Math.floor(secs / 60);
-
-                currentSessionId = parseInt(sessionId);
-                totalSeconds = totalMins * 60;
-                secondsLeft = totalSeconds;
-                isPaused = false;
-
-                document.getElementById('activeTaskLabel').textContent =
-                    taskLabel ? `Task: ${decodeURIComponent(taskLabel)}` : '';
-                document.getElementById('setup').style.display = 'none';
-                document.getElementById('timerDisplay').style.display = 'block';
-                updateDisplay();
-
-                intervalId = setInterval(() => {
-                    secondsLeft--;
-                    updateDisplay();
-                    if (secondsLeft <= 0) finishTimer(true);
-                }, 1000);
             }
         });
 
@@ -147,20 +116,20 @@
             const taskId = taskSelectEl.value ? parseInt(taskSelectEl.value) : null;
             const taskLabel = taskId ? taskSelectEl.options[taskSelectEl.selectedIndex].text : null;
 
-            const hours = Math.floor(minutes / 60);
-            const mins = minutes % 60;
-            const plannedDuration = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:00`;
-
+            // Send plannedMinutes as a plain int — server converts to TimeSpan.
+            // userId is resolved on the server from the authenticated session.
             const res = await fetch('/Session/Start', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     taskId: taskId,
-                    plannedDuration: plannedDuration
+                    plannedMinutes: minutes
                 })
             });
 
             if (!res.ok) {
+                const errText = await res.text().catch(() => '');
+                console.error('Start session failed:', res.status, errText);
                 showError('startError', 'Failed to start session. Please try again.');
                 return;
             }
@@ -172,7 +141,8 @@
             secondsLeft = totalSeconds;
             isPaused = false;
 
-            document.getElementById('activeTaskLabel').textContent = taskLabel ? `Task: ${taskLabel}` : '';
+            document.getElementById('activeTaskLabel').textContent =
+                taskLabel ? `Task: ${taskLabel}` : '';
             document.getElementById('setup').style.display = 'none';
             document.getElementById('timerDisplay').style.display = 'block';
             updateDisplay();

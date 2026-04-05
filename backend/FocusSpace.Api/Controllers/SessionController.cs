@@ -22,16 +22,24 @@ public class SessionController : Controller
     private async Task<int> GetCurrentUserIdAsync()
     {
         var user = await _userManager.GetUserAsync(User);
-        return user?.Id ?? throw new InvalidOperationException("Authenticated user not found in database.");
+        return user?.Id ?? throw new InvalidOperationException("Authenticated user not found.");
     }
 
     public IActionResult Index() => View();
 
     [HttpPost]
-    public async Task<IActionResult> Start([FromBody] CreateSessionDto dto)
+    public async Task<IActionResult> Start([FromBody] StartSessionRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        dto.UserId = await GetCurrentUserIdAsync();
+
+        var userId = await GetCurrentUserIdAsync();
+        var dto = new CreateSessionDto
+        {
+            UserId = userId,
+            TaskId = request.TaskId,
+            PlannedDuration = TimeSpan.FromMinutes(request.PlannedMinutes)
+        };
+
         var sessionId = await _sessionService.StartSessionAsync(dto);
         return Ok(new { sessionId });
     }
@@ -59,4 +67,18 @@ public class SessionController : Controller
         await _sessionService.ResumeSessionAsync(sessionId);
         return Ok();
     }
+
+    [HttpGet]
+    public async Task<IActionResult> GetUserSessions()
+    {
+        var userId = await GetCurrentUserIdAsync();
+        var sessions = await _sessionService.GetSessionsByUserIdAsync(userId);
+        return Json(sessions);
+    }
+}
+
+public sealed class StartSessionRequest
+{
+    public int? TaskId { get; set; }
+    public int PlannedMinutes { get; set; }
 }
