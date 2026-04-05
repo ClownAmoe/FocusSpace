@@ -116,21 +116,20 @@
             const taskId = taskSelectEl.value ? parseInt(taskSelectEl.value) : null;
             const taskLabel = taskId ? taskSelectEl.options[taskSelectEl.selectedIndex].text : null;
 
-            const hours = Math.floor(minutes / 60);
-            const mins = minutes % 60;
-            const plannedDuration = `${String(hours).padStart(2, '00')}:${String(mins).padStart(2, '0')}:00`;
-
+            // Send plannedMinutes as a plain int — server converts to TimeSpan.
+            // userId is resolved on the server from the authenticated session.
             const res = await fetch('/Session/Start', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    userId: 2, // TODO: Get actual user ID from auth context
                     taskId: taskId,
-                    plannedDuration: plannedDuration
+                    plannedMinutes: minutes
                 })
             });
 
             if (!res.ok) {
+                const errText = await res.text().catch(() => '');
+                console.error('Start session failed:', res.status, errText);
                 showError('startError', 'Failed to start session. Please try again.');
                 return;
             }
@@ -142,7 +141,8 @@
             secondsLeft = totalSeconds;
             isPaused = false;
 
-            document.getElementById('activeTaskLabel').textContent = taskLabel ? `Task: ${taskLabel}` : '';
+            document.getElementById('activeTaskLabel').textContent =
+                taskLabel ? `Task: ${taskLabel}` : '';
             document.getElementById('setup').style.display = 'none';
             document.getElementById('timerDisplay').style.display = 'block';
             updateDisplay();
