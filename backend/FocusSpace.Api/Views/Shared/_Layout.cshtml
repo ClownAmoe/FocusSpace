@@ -22,272 +22,116 @@
             --text-info: #90caf9ff;
         }
 
-        body {
-            background: var(--dark-amethyst);
-            color: var(--text-primary);
+        body { background: var(--dark-amethyst); color: var(--text-primary); }
+        .navbar { background: var(--dusty-grape) !important; }
+        .navbar-brand { color: var(--text-primary) !important; font-weight: 700; letter-spacing: 1px; }
+        .card { background: var(--amethyst-smoke); border: 1px solid var(--dusty-grape); }
+        .btn-primary { background: var(--dark-button); border-color: var(--dark-button); color: var(--text-primary); font-weight: 600; }
+        .btn-primary:hover { background: var(--dark-button-hover); border-color: var(--dark-button-hover); color: var(--text-primary); }
+        .table { color: var(--text-primary); }
+        .table-hover tbody tr:hover { background: var(--dusty-grape); color: var(--text-primary); }
+        .table th { color: var(--text-primary); background: var(--dusty-grape); border-color: var(--dusty-grape); }
+        .table td { border-color: var(--dusty-grape); }
+        a { color: var(--text-info); text-decoration: none; }
+        a:hover { color: var(--text-primary); text-decoration: underline; }
+        h1, h2, h3, h4, h5, h6 { color: var(--text-primary) !important; }
+        .form-control { background: var(--amethyst-smoke) !important; color: var(--text-secondary) !important; border-color: var(--dusty-grape) !important; }
+        .form-control:focus { border-color: var(--lilac) !important; box-shadow: 0 0 0 .2rem rgba(190,149,196,.25) !important; color: var(--text-primary) !important; }
+        .form-label { color: var(--text-primary) !important; font-weight: 500; }
+        .form-text { color: var(--text-muted) !important; }
+        .form-check-input { background: var(--amethyst-smoke); border-color: var(--dusty-grape); }
+        .form-check-input:checked { background: var(--dark-button); border-color: var(--dark-button); }
+        .form-check-label { color: var(--text-secondary) !important; }
+        .btn-outline-secondary { color: var(--text-primary); border-color: var(--dusty-grape); background: var(--dusty-grape); }
+        .btn-outline-secondary:hover { background: var(--lilac); border-color: var(--lilac); color: var(--dark-amethyst); }
+        .btn-outline-warning { color: var(--dark-amethyst); border-color: #fbbf24; background: #fbbf24; font-weight: 600; }
+        .btn-outline-warning:hover { background: #fcd34d; border-color: #fcd34d; color: var(--dark-amethyst); }
+        .btn-outline-danger { color: #fff; border-color: var(--text-danger); background: var(--text-danger); font-weight: 600; }
+        .btn-outline-danger:hover { background: #ff6b6b; border-color: #ff6b6b; color: #fff; }
+        .dropdown-menu { background: var(--amethyst-smoke) !important; border-color: var(--dusty-grape) !important; }
+        .dropdown-item { color: var(--text-secondary) !important; }
+        .dropdown-item:hover { background: var(--dark-button-hover) !important; color: var(--text-primary) !important; }
+        .alert-info { background: var(--dusty-grape); border-color: var(--lilac); color: var(--text-info); }
+        .alert-success { background: var(--amethyst-smoke); border-color: var(--lilac); color: var(--text-success); }
+        .alert-danger { background: var(--dusty-grape); border-color: var(--pink-orchid); color: var(--text-danger); }
+        .modal-content { background: var(--dark-amethyst); border: 1px solid var(--dusty-grape); color: var(--text-primary); }
+        .modal-header { background: var(--dusty-grape); border-bottom: 1px solid var(--lilac); color: var(--text-primary); }
+        .modal-header .btn-close { filter: invert(1); }
+        .modal-body { background: var(--dark-amethyst); color: var(--text-primary); }
+        .modal-body p { color: var(--text-secondary); }
+        .modal-footer { background: var(--dark-amethyst); border-top: 1px solid var(--dusty-grape); }
+        .btn-secondary { background: var(--dark-button); border-color: var(--dark-button); color: var(--text-primary); }
+        .btn-secondary:hover { background: var(--dark-button-hover); border-color: var(--dark-button-hover); color: var(--text-primary); }
+        label { color: var(--text-primary); font-weight: 500; }
+        .small, .text-small { color: var(--text-muted); }
+
+        /* ── Session History Modal ── */
+        #sessionHistoryModal .modal-dialog {
+            max-width: 720px;
         }
 
-        .navbar {
-            background: var(--dusty-grape) !important;
+        .session-row {
+            background: rgba(94, 84, 142, 0.25);
+            border: 1px solid var(--dusty-grape);
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            transition: background 0.2s;
         }
-
-        .navbar-brand {
-            color: var(--text-primary) !important;
+        .session-row:hover {
+            background: rgba(94, 84, 142, 0.45);
+        }
+        .session-status {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
             font-weight: 700;
-            letter-spacing: 1px;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+        }
+        .status-completed  { background: #388e3c; color: #fff; }
+        .status-ongoing    { background: #1565c0; color: #fff; }
+        .status-paused     { background: #f57c00; color: #fff; }
+        .status-aborted    { background: #c62828; color: #fff; }
+
+        .session-meta { color: var(--text-muted); font-size: 12px; margin-top: 4px; }
+
+        #sessionHistoryLoading { text-align: center; padding: 40px; color: var(--text-muted); }
+        #sessionHistoryEmpty   { text-align: center; padding: 40px; color: var(--text-muted); }
+
+        .session-filter-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+        .session-filter-btn {
+            padding: 6px 14px; border: 1px solid var(--dusty-grape); border-radius: 20px;
+            background: transparent; color: var(--text-muted); cursor: pointer; font-size: 13px;
+            transition: all .2s;
+        }
+        .session-filter-btn.active {
+            background: var(--dusty-grape); color: var(--text-primary); border-color: var(--lilac);
+        }
+        .session-filter-btn:hover:not(.active) {
+            background: rgba(94,84,142,.3); color: var(--text-primary);
         }
 
-        .card {
-            background: var(--amethyst-smoke);
-            border: 1px solid var(--dusty-grape);
-        }
+        .session-modal-body { max-height: 65vh; overflow-y: auto; padding-right: 4px; }
+        .session-modal-body::-webkit-scrollbar { width: 6px; }
+        .session-modal-body::-webkit-scrollbar-track { background: transparent; }
+        .session-modal-body::-webkit-scrollbar-thumb { background: var(--dusty-grape); border-radius: 3px; }
 
-        .btn-primary {
-            background: var(--dark-button);
-            border-color: var(--dark-button);
-            color: var(--text-primary);
-            font-weight: 600;
-        }
-
-        .btn-primary:hover {
-            background: var(--dark-button-hover);
-            border-color: var(--dark-button-hover);
-            color: var(--text-primary);
-        }
-
-        .table {
-            color: var(--text-primary);
-        }
-
-        .table-hover tbody tr:hover {
-            background: var(--dusty-grape);
-            color: var(--text-primary);
-        }
-
-        .table th {
-            color: var(--text-primary);
-            background: var(--dusty-grape);
-            border-color: var(--dusty-grape);
-        }
-
-        .table td {
-            border-color: var(--dusty-grape);
-        }
-
-        a {
-            color: var(--text-info);
-            text-decoration: none;
-        }
-
-        a:hover {
-            color: var(--text-primary);
-            text-decoration: underline;
-        }
-
-        h1, h2, h3, h4, h5, h6 {
-            color: var(--text-primary) !important;
-        }
-
-        .form-control {
-            background: var(--amethyst-smoke) !important;
-            color: var(--text-secondary) !important;
-            border-color: var(--dusty-grape) !important;
-        }
-
-        .form-control:focus {
-            border-color: var(--lilac) !important;
-            box-shadow: 0 0 0 .2rem rgba(190, 149, 196, .25) !important;
-            color: var(--text-primary) !important;
-        }
-
-        .form-label {
-            color: var(--text-primary) !important;
-            font-weight: 500;
-        }
-
-        .form-text {
-            color: var(--text-muted) !important;
-        }
-
-        .form-check-input {
-            background: var(--amethyst-smoke);
-            border-color: var(--dusty-grape);
-        }
-
-        .form-check-input:checked {
-            background: var(--dark-button);
-            border-color: var(--dark-button);
-        }
-
-        .form-check-label {
-            color: var(--text-secondary) !important;
-        }
-
-        .btn-outline-secondary {
-            color: var(--text-primary);
-            border-color: var(--dusty-grape);
-            background: var(--dusty-grape);
-        }
-
-        .btn-outline-secondary:hover {
-            background: var(--lilac);
-            border-color: var(--lilac);
-            color: var(--dark-amethyst);
-        }
-
-        .btn-outline-warning {
-            color: var(--dark-amethyst);
-            border-color: #fbbf24;
-            background: #fbbf24;
-            font-weight: 600;
-        }
-
-        .btn-outline-warning:hover {
-            background: #fcd34d;
-            border-color: #fcd34d;
-            color: var(--dark-amethyst);
-        }
-
-        .btn-outline-danger {
-            color: #fff;
-            border-color: var(--text-danger);
-            background: var(--text-danger);
-            font-weight: 600;
-        }
-
-        .btn-outline-danger:hover {
-            background: #ff6b6b;
-            border-color: #ff6b6b;
-            color: #fff;
-        }
-
-        .dropdown-menu {
-            background: var(--amethyst-smoke) !important;
-            border-color: var(--dusty-grape) !important;
-        }
-
-        .dropdown-item {
-            color: var(--text-secondary) !important;
-        }
-
-        .dropdown-item:hover {
-            background: var(--dark-button-hover) !important;
-            color: var(--text-primary) !important;
-        }
-
-        .alert-info {
-            background: var(--dusty-grape);
-            border-color: var(--lilac);
-            color: var(--text-info);
-        }
-
-        .alert-success {
-            background: var(--amethyst-smoke);
-            border-color: var(--lilac);
-            color: var(--text-success);
-        }
-
-        .alert-danger {
-            background: var(--dusty-grape);
-            border-color: var(--pink-orchid);
-            color: var(--text-danger);
-        }
-
-        /* Modal Styles */
-        .modal-content {
-            background: var(--dark-amethyst);
-            border: 1px solid var(--dusty-grape);
-            color: var(--text-primary);
-        }
-
-        .modal-header {
-            background: var(--dusty-grape);
-            border-bottom: 1px solid var(--lilac);
-            color: var(--text-primary);
-        }
-
-        .modal-header .btn-close {
-            filter: invert(1);
-        }
-
-        .modal-body {
-            background: var(--dark-amethyst);
-            color: var(--text-primary);
-        }
-
-        .modal-body p {
-            color: var(--text-secondary);
-        }
-
-        .modal-footer {
-            background: var(--dark-amethyst);
-            border-top: 1px solid var(--dusty-grape);
-        }
-
-        .btn-secondary {
-            background: var(--dark-button);
-            border-color: var(--dark-button);
-            color: var(--text-primary);
-        }
-
-        .btn-secondary:hover {
-            background: var(--dark-button-hover);
-            border-color: var(--dark-button-hover);
-            color: var(--text-primary);
-        }
-
-        label {
-            color: var(--text-primary);
-            font-weight: 500;
-        }
-
-        .small, .text-small {
-            color: var(--text-muted);
-        }
-
-        .planet {
-            transition: transform 0.5s ease, top 0.5s ease, left 0.5s ease;
-            position: fixed; /* Ensure the planet moves relative to the viewport */
-        }
-
-        .planet.active {
-            transform: scale(2);
-            top: 50%; /* Center vertically */
-            left: 20%; /* Always move to 20% from the left edge of the screen */
-            transform: scale(2) translateY(-50%); /* Scale and center vertically */
-        }
-
+        /* existing styles kept below */
+        .planet { transition: transform 0.5s ease, top 0.5s ease, left 0.5s ease; position: fixed; }
+        .planet.active { transform: scale(2); top: 50%; left: 20%; transform: scale(2) translateY(-50%); }
         .modal-right {
-            position: fixed;
-            top: 0;
-            right: -100%;
-            height: 100%;
-            width: 50%;
-            background: var(--dark-amethyst);
-            color: var(--text-primary);
-            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.5);
-            transition: right 0.5s ease;
-            z-index: 1050;
+            position: fixed; top: 0; right: -100%; height: 100%; width: 50%;
+            background: var(--dark-amethyst); color: var(--text-primary);
+            box-shadow: -2px 0 5px rgba(0,0,0,.5); transition: right .5s ease; z-index: 1050;
         }
-
-        .modal-right.active {
-            right: 0;
-        }
-
+        .modal-right.active { right: 0; }
         .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1040;
-            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,.5); z-index: 1040; display: none;
         }
-
-        .modal-overlay.active {
-            display: block;
-        }
+        .modal-overlay.active { display: block; }
     </style>
 </head>
 <body>
@@ -350,21 +194,22 @@
                                 <li>
                                     <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#myAccountModal">My Account</a>
                                 </li>
+                                <li><hr class="dropdown-divider" style="border-color:var(--dusty-grape)"></li>
+                                <li>
+                                    <a class="dropdown-item" href="#" id="openSessionHistoryBtn">
+                                        📋 Session History
+                                    </a>
+                                </li>
                             </ul>
                         </li>
                     }
                     else
                     {
                         <li class="nav-item">
-                            <a class="nav-link text-light" asp-controller="Account" asp-action="Login">
-                                Log In
-                            </a>
+                            <a class="nav-link text-light" asp-controller="Account" asp-action="Login">Log In</a>
                         </li>
                         <li class="nav-item">
-                            <a class="btn btn-primary btn-sm ms-2"
-                               asp-controller="Account" asp-action="Register">
-                                Register
-                            </a>
+                            <a class="btn btn-primary btn-sm ms-2" asp-controller="Account" asp-action="Register">Register</a>
                         </li>
                     }
 
@@ -374,8 +219,6 @@
     </nav>
 
     <div class="container">
-
-        @* Глобальні TempData повідомлення *@
         @if (TempData["Success"] is string success)
         {
             <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -406,6 +249,50 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+
+<!-- ════════════════════════════════════════════════════════════
+     SESSION HISTORY MODAL
+════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="sessionHistoryModal" tabindex="-1" aria-labelledby="sessionHistoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="sessionHistoryModalLabel">📋 Session History</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: 20px 24px;">
+
+                <!-- Filter tabs -->
+                <div class="session-filter-tabs" id="sessionFilterTabs">
+                    <button class="session-filter-btn active" data-filter="all">All</button>
+                    <button class="session-filter-btn" data-filter="Completed">✅ Completed</button>
+                    <button class="session-filter-btn" data-filter="Ongoing">🔵 Ongoing</button>
+                    <button class="session-filter-btn" data-filter="Paused">⏸ Paused</button>
+                    <button class="session-filter-btn" data-filter="Aborted">❌ Aborted</button>
+                </div>
+
+                <!-- Summary row -->
+                <div id="sessionSummary" style="display:none; margin-bottom:14px; color:var(--text-muted); font-size:13px;">
+                    Total: <strong id="sumTotal" style="color:var(--text-primary)">0</strong> sessions &nbsp;|&nbsp;
+                    Focus time: <strong id="sumFocus" style="color:#a78bfa">0 min</strong>
+                </div>
+
+                <!-- Loading / empty states -->
+                <div id="sessionHistoryLoading">Loading sessions…</div>
+                <div id="sessionHistoryEmpty" style="display:none;">No sessions found.</div>
+
+                <!-- Session list -->
+                <div class="session-modal-body">
+                    <div id="sessionHistoryList"></div>
+                </div>
+            </div>
+            <div class="modal-footer" style="justify-content:flex-start; padding: 12px 24px;">
+                <span style="color:var(--text-muted); font-size:12px;">Showing your personal focus sessions</span>
+                <button type="button" class="btn btn-secondary ms-auto" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- About Us Modal -->
 <div class="modal fade" id="aboutUsModal" tabindex="-1" aria-labelledby="aboutUsModalLabel" aria-hidden="true">
@@ -443,249 +330,246 @@
     </div>
 </div>
 
-<!-- Modal for Session and Task Creation -->
+<!-- Session + Task slide-in -->
 <div id="sessionTaskModal" class="modal-right">
     <div class="p-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5>Create Session and Task</h5>
-            <button type="button" class="btn-close" aria-label="Close"></button>
+            <h5 style="color:var(--text-primary)">🚀 Quick Actions</h5>
+            <button type="button" class="btn-close" id="slideInClose" aria-label="Close"></button>
         </div>
-        <div class="row">
-            <div class="col-md-6">
-                <h6>Create Task</h6>
-                <form asp-controller="Tasks" asp-action="Create" method="post">
-                    <div class="mb-3">
-                        <label for="taskTitle" class="form-label">Title</label>
-                        <input type="text" id="taskTitle" name="Title" class="form-control" placeholder="Task Title">
-                    </div>
-                    <div class="mb-3">
-                        <label for="taskDescription" class="form-label">Description</label>
-                        <textarea id="taskDescription" name="Description" class="form-control" rows="3" placeholder="Task Description"></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Create Task</button>
-                </form>
-            </div>
-            <div class="col-md-6">
-                <h6>Create Session</h6>
-                <form asp-controller="Session" asp-action="Start" method="post">
-                    <div class="mb-3">
-                        <label for="sessionDuration" class="form-label">Planned Duration</label>
-                        <input type="text" id="sessionDuration" name="PlannedDuration" class="form-control" placeholder="HH:MM:SS">
-                    </div>
-                    <button type="submit" class="btn btn-primary">Start Session</button>
-                </form>
-            </div>
+
+        <div class="d-flex flex-column gap-3">
+            <a href="/Session"
+               class="btn btn-primary w-100 py-3"
+               style="font-size:16px;letter-spacing:.5px;">
+                ▶ Start Focus Session
+            </a>
+            <a href="/Tasks/Create"
+               class="btn btn-outline-secondary w-100 py-3"
+               style="font-size:16px;">
+                ✏️ Create New Task
+            </a>
+            <a href="/Tasks"
+               class="btn btn-outline-secondary w-100 py-3"
+               style="font-size:16px;">
+                🗂️ My Tasks
+            </a>
         </div>
     </div>
 </div>
 
-<style>
-    .planet {
-        transition: transform 0.5s ease, top 0.5s ease, left 0.5s ease;
-        position: fixed; /* Ensure the planet moves relative to the viewport */
-    }
-
-    .planet.active {
-        transform: scale(2);
-        top: 50%; /* Center vertically */
-        left: 20%; /* Always move to 20% from the left edge of the screen */
-        transform: scale(2) translateY(-50%); /* Scale and center vertically */
-    }
-
-    .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 1040;
-        display: none;
-    }
-
-    .modal-overlay.active {
-        display: block;
-    }
-
-    .modal-right {
-        position: fixed;
-        top: 0;
-        right: -100%;
-        height: 100%;
-        width: 50%;
-        background: var(--dark-amethyst);
-        color: var(--text-primary);
-        box-shadow: -2px 0 5px rgba(0, 0, 0, 0.5);
-        transition: right 0.5s ease;
-        z-index: 1050;
-    }
-
-    .modal-right.active {
-        right: 0;
-    }
-</style>
-
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const planets = document.querySelectorAll('.planet');
-        const modal = document.getElementById('sessionTaskModal');
-        let overlay = document.querySelector('.modal-overlay');
-        const planetVisualization = document.getElementById('planet-visualization'); // Get the SVG graph
+// ── Session History ────────────────────────────────────────────────
+(function () {
+    let allSessions = [];
+    let currentFilter = 'all';
 
-        // Ensure overlay exists
-        if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.classList.add('modal-overlay');
-            document.body.appendChild(overlay);
-        }
+    const modalEl      = document.getElementById('sessionHistoryModal');
+    const listEl       = document.getElementById('sessionHistoryList');
+    const loadingEl    = document.getElementById('sessionHistoryLoading');
+    const emptyEl      = document.getElementById('sessionHistoryEmpty');
+    const summaryEl    = document.getElementById('sessionSummary');
+    const sumTotalEl   = document.getElementById('sumTotal');
+    const sumFocusEl   = document.getElementById('sumFocus');
+    const openBtn      = document.getElementById('openSessionHistoryBtn');
 
-        let clonedPlanet = null; // Track cloned planet
+    if (!openBtn) return; // not authenticated
 
-        planets.forEach(planet => {
-            planet.addEventListener('click', () => {
-                // Get the SVG element position
-                const planetRect = planet.getBoundingClientRect();
+    // Open modal + load data
+    openBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const bsModal = new bootstrap.Modal(modalEl);
+        bsModal.show();
+        loadSessions();
+    });
 
-                // Calculate position relative to viewport
-                const startTop = planetRect.top;
-                const startLeft = planetRect.left;
-
-                console.log(`Planet clicked. Position: top=${startTop}, left=${startLeft}`);
-
-                // Hide the planet visualization (graph)
-                if (planetVisualization) {
-                    planetVisualization.style.opacity = '0';
-                    planetVisualization.style.transition = 'opacity 0.3s ease';
-                    planetVisualization.style.pointerEvents = 'none';
-                }
-
-                // Clone the planet SVG group and convert it to HTML
-                const cloneGroup = planet.cloneNode(true);
-                const svgNS = 'http://www.w3.org/2000/svg';
-                const newSvg = document.createElementNS(svgNS, 'svg');
-                newSvg.setAttribute('width', '120');
-                newSvg.setAttribute('height', '120');
-                newSvg.setAttribute('viewBox', '-50 -50 200 200');
-                newSvg.style.position = 'fixed';
-                newSvg.style.top = `${startTop}px`;
-                newSvg.style.left = `${startLeft}px`;
-                newSvg.style.zIndex = '9999';
-                newSvg.style.transition = 'top 0.5s ease, left 0.5s ease, transform 0.5s ease';
-                newSvg.style.cursor = 'pointer';
-
-                // Copy defs from the original SVG to the new one
-                const originalDefs = planetVisualization.querySelector('defs');
-                if (originalDefs) {
-                    const defsCopy = originalDefs.cloneNode(true);
-                    newSvg.appendChild(defsCopy);
-                }
-
-                // Clear the cloneGroup transform and set coordinates
-                cloneGroup.removeAttribute('transform');
-                cloneGroup.removeAttribute('data-cx');
-                cloneGroup.removeAttribute('data-cy');
-
-                // Get the planet's cx and cy attributes
-                const cx = parseFloat(planet.getAttribute('data-cx'));
-                const cy = parseFloat(planet.getAttribute('data-cy'));
-                const radius = planet.querySelector('circle')?.getAttribute('r') || 30;
-
-                // Adjust all circle and ellipse positions in cloned group to center (50, 50)
-                const circles = cloneGroup.querySelectorAll('circle');
-                const ellipses = cloneGroup.querySelectorAll('ellipse');
-                const texts = cloneGroup.querySelectorAll('text');
-
-                circles.forEach(circle => {
-                    const originalCx = parseFloat(circle.getAttribute('cx'));
-                    const originalCy = parseFloat(circle.getAttribute('cy'));
-                    const offsetX = originalCx - cx;
-                    const offsetY = originalCy - cy;
-                    circle.setAttribute('cx', 50 + offsetX);
-                    circle.setAttribute('cy', 50 + offsetY);
-                });
-
-                ellipses.forEach(ellipse => {
-                    const originalCx = parseFloat(ellipse.getAttribute('cx'));
-                    const originalCy = parseFloat(ellipse.getAttribute('cy'));
-                    const offsetX = originalCx - cx;
-                    const offsetY = originalCy - cy;
-                    ellipse.setAttribute('cx', 50 + offsetX);
-                    ellipse.setAttribute('cy', 50 + offsetY);
-                });
-
-                texts.forEach(text => {
-                    const originalX = parseFloat(text.getAttribute('x'));
-                    const originalY = parseFloat(text.getAttribute('y'));
-                    const offsetX = originalX - cx;
-                    const offsetY = originalY - cy;
-                    text.setAttribute('x', 50 + offsetX);
-                    text.setAttribute('y', 50 + offsetY);
-                });
-
-                newSvg.appendChild(cloneGroup);
-                document.body.appendChild(newSvg);
-
-                // Remove previous clone if exists
-                if (clonedPlanet) {
-                    clonedPlanet.remove();
-                }
-                clonedPlanet = newSvg;
-
-                console.log(`Cloned SVG created at top=${startTop}, left=${startLeft}`);
-
-                // Trigger animation after a brief delay
-                setTimeout(() => {
-                    const targetTop = (window.innerHeight / 2) - 60;
-                    const targetLeft = (window.innerWidth * 0.2) - 60;
-
-                    newSvg.style.top = `${targetTop}px`;
-                    newSvg.style.left = `${targetLeft}px`;
-                    newSvg.style.transform = 'scale(4)';
-
-                    console.log(`Animating to: top=${targetTop}px, left=${targetLeft}px with scale(4)`);
-                }, 10);
-
-                // Show the modal and overlay
-                modal.classList.add('active');
-                overlay.classList.add('active');
-            });
-        });
-
-        // Function to close modal and remove cloned planet
-        const closeModal = () => {
-            modal.classList.remove('active');
-            overlay.classList.remove('active');
-
-            if (clonedPlanet) {
-                clonedPlanet.style.opacity = '0';
-                clonedPlanet.style.transition = 'opacity 0.3s ease';
-                setTimeout(() => {
-                    clonedPlanet.remove();
-                    clonedPlanet = null;
-                }, 300);
-            }
-
-            // Show the planet visualization (graph) again
-            if (planetVisualization) {
-                planetVisualization.style.opacity = '1';
-                planetVisualization.style.transition = 'opacity 0.3s ease';
-                planetVisualization.style.pointerEvents = 'auto';
-            }
-        };
-
-        // Close modal when clicking the overlay or pressing escape
-        overlay.addEventListener('click', closeModal);
-
-        modal.addEventListener('click', (e) => {
-            if (e.target.classList.contains('btn-close')) {
-                closeModal();
-            }
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeModal();
-            }
+    // Filter buttons
+    document.getElementById('sessionFilterTabs')?.querySelectorAll('.session-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.session-filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentFilter = btn.dataset.filter;
+            renderSessions();
         });
     });
+
+    async function loadSessions() {
+        listEl.innerHTML = '';
+        loadingEl.style.display = 'block';
+        emptyEl.style.display   = 'none';
+        summaryEl.style.display  = 'none';
+
+        try {
+            const res = await fetch('/Session/GetUserSessions');
+            if (!res.ok) throw new Error('Failed to load');
+            allSessions = await res.json();
+            renderSessions();
+        } catch {
+            loadingEl.textContent = '⚠️ Could not load session history.';
+        }
+    }
+
+    function renderSessions() {
+        loadingEl.style.display = 'none';
+
+        const filtered = currentFilter === 'all'
+            ? allSessions
+            : allSessions.filter(s => s.status === currentFilter);
+
+        if (filtered.length === 0) {
+            emptyEl.style.display  = 'block';
+            summaryEl.style.display = 'none';
+            listEl.innerHTML = '';
+            return;
+        }
+
+        emptyEl.style.display = 'none';
+
+        // Summary
+        const totalMinutes = filtered.reduce((acc, s) => {
+            if (!s.actualDuration) return acc;
+            const parts = s.actualDuration.split(':').map(Number);
+            return acc + (parts[0] * 60) + parts[1] + Math.round(parts[2] / 60);
+        }, 0);
+
+        sumTotalEl.textContent = filtered.length;
+        sumFocusEl.textContent = totalMinutes >= 60
+            ? `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`
+            : `${totalMinutes} min`;
+        summaryEl.style.display = 'block';
+
+        listEl.innerHTML = filtered.map(s => {
+            const statusClass = `status-${s.status.toLowerCase()}`;
+            const start = new Date(s.startTime);
+            const dateStr = start.toLocaleDateString('uk-UA', { day: '2-digit', month: 'short', year: 'numeric' });
+            const timeStr = start.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+
+            const planned  = formatDuration(s.plannedDuration);
+            const actual   = s.actualDuration ? formatDuration(s.actualDuration) : '—';
+            const taskBadge = s.taskTitle
+                ? `<span style="color:var(--lilac);font-size:12px;">📌 ${escHtml(s.taskTitle)}</span>`
+                : `<span style="color:var(--text-muted);font-size:12px;">No task</span>`;
+
+            return `
+            <div class="session-row">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                    <div>
+                        <span class="session-status ${statusClass}">${s.status}</span>
+                        &nbsp; ${taskBadge}
+                    </div>
+                    <div style="color:var(--text-muted);font-size:12px;">${dateStr}, ${timeStr}</div>
+                </div>
+                <div class="session-meta mt-2 d-flex gap-3 flex-wrap">
+                    <span>🎯 Planned: <strong style="color:var(--text-primary)">${planned}</strong></span>
+                    <span>⏱ Actual: <strong style="color:var(--text-primary)">${actual}</strong></span>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function formatDuration(ts) {
+        if (!ts) return '—';
+        // ts may arrive as "HH:MM:SS" or ISO 8601 duration
+        const parts = ts.split(':');
+        if (parts.length === 3) {
+            const h = parseInt(parts[0]), m = parseInt(parts[1]);
+            if (h > 0) return `${h}h ${m}m`;
+            return `${m}m`;
+        }
+        return ts;
+    }
+
+    function escHtml(str) {
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+})();
+
+// ── Slide-in planet modal ──────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    const planets = document.querySelectorAll('.planet');
+    const modal   = document.getElementById('sessionTaskModal');
+    let overlay   = document.querySelector('.modal-overlay');
+    const planetVisualization = document.getElementById('planet-visualization');
+
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.classList.add('modal-overlay');
+        document.body.appendChild(overlay);
+    }
+
+    let clonedPlanet = null;
+
+    planets.forEach(planet => {
+        planet.addEventListener('click', () => {
+            const planetRect = planet.getBoundingClientRect();
+            const startTop  = planetRect.top;
+            const startLeft = planetRect.left;
+
+            if (planetVisualization) {
+                planetVisualization.style.opacity = '0';
+                planetVisualization.style.transition = 'opacity 0.3s ease';
+                planetVisualization.style.pointerEvents = 'none';
+            }
+
+            const cloneGroup = planet.cloneNode(true);
+            const svgNS = 'http://www.w3.org/2000/svg';
+            const newSvg = document.createElementNS(svgNS, 'svg');
+            newSvg.setAttribute('width', '120');
+            newSvg.setAttribute('height', '120');
+            newSvg.setAttribute('viewBox', '-50 -50 200 200');
+            newSvg.style.cssText = `position:fixed;top:${startTop}px;left:${startLeft}px;z-index:9999;transition:top .5s ease,left .5s ease,transform .5s ease;cursor:pointer`;
+
+            const originalDefs = planetVisualization?.querySelector('defs');
+            if (originalDefs) newSvg.appendChild(originalDefs.cloneNode(true));
+
+            cloneGroup.removeAttribute('transform');
+            cloneGroup.removeAttribute('data-cx');
+            cloneGroup.removeAttribute('data-cy');
+
+            const cx = parseFloat(planet.getAttribute('data-cx'));
+            const cy = parseFloat(planet.getAttribute('data-cy'));
+
+            cloneGroup.querySelectorAll('circle').forEach(el => {
+                el.setAttribute('cx', 50 + (parseFloat(el.getAttribute('cx')) - cx));
+                el.setAttribute('cy', 50 + (parseFloat(el.getAttribute('cy')) - cy));
+            });
+            cloneGroup.querySelectorAll('ellipse').forEach(el => {
+                el.setAttribute('cx', 50 + (parseFloat(el.getAttribute('cx')) - cx));
+                el.setAttribute('cy', 50 + (parseFloat(el.getAttribute('cy')) - cy));
+            });
+
+            newSvg.appendChild(cloneGroup);
+            document.body.appendChild(newSvg);
+            if (clonedPlanet) clonedPlanet.remove();
+            clonedPlanet = newSvg;
+
+            setTimeout(() => {
+                newSvg.style.top  = `${(window.innerHeight / 2) - 60}px`;
+                newSvg.style.left = `${(window.innerWidth * 0.2) - 60}px`;
+                newSvg.style.transform = 'scale(4)';
+            }, 10);
+
+            modal.classList.add('active');
+            overlay.classList.add('active');
+        });
+    });
+
+    const closeSlideIn = () => {
+        modal.classList.remove('active');
+        overlay.classList.remove('active');
+        if (clonedPlanet) {
+            clonedPlanet.style.opacity = '0';
+            clonedPlanet.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => { clonedPlanet?.remove(); clonedPlanet = null; }, 300);
+        }
+        if (planetVisualization) {
+            planetVisualization.style.opacity = '1';
+            planetVisualization.style.pointerEvents = 'auto';
+        }
+    };
+
+    overlay.addEventListener('click', closeSlideIn);
+    modal.addEventListener('click', e => { if (e.target.id === 'slideInClose') closeSlideIn(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSlideIn(); });
+});
 </script>

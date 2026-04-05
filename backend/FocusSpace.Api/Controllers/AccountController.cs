@@ -148,7 +148,7 @@ namespace FocusSpace.Api.Controllers
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(LoginDto dto, string? returnUrl = null)
+            public async Task<IActionResult> Login(LoginDto dto, string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
 
