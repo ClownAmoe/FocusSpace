@@ -460,5 +460,252 @@ namespace FocusSpace.Tests.Controllers
             var viewResult = Assert.IsType<ViewResult>(result);
             Assert.Same(dto, viewResult.Model);
         }
+
+        [Fact]
+        public async Task Login_Post_BlockedAccount_ReturnsViewWithError()
+        {
+            // Arrange
+            var user = BuildUser(1, "test@example.com");
+            user.IsApproved = true;
+            user.EmailConfirmed = true;
+            user.IsBlocked = true;
+
+            var userManagerMock = new Mock<UserManager<User>>(
+                new Mock<IUserStore<User>>().Object,
+                new Mock<IOptions<IdentityOptions>>().Object,
+                new Mock<IPasswordHasher<User>>().Object,
+                new IUserValidator<User>[0],
+                new IPasswordValidator<User>[0],
+                new Mock<ILookupNormalizer>().Object,
+                new Mock<IdentityErrorDescriber>().Object,
+                new Mock<IServiceProvider>().Object,
+                new Mock<ILogger<UserManager<User>>>().Object);
+
+            userManagerMock
+                .Setup(m => m.FindByEmailAsync("test@example.com"))
+                .ReturnsAsync(user);
+
+            var controller = CreateController(userManagerMock.Object);
+            var dto = new LoginDto { Email = "test@example.com", Password = "password" };
+
+            // Act
+            var result = await controller.Login(dto);
+
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            Assert.Same(dto, viewResult.Model);
+        }
+
+        [Fact]
+        public async Task Login_Post_LockedAccount_ReturnsViewWithError()
+        {
+            // Arrange
+            var user = BuildUser(1, "test@example.com");
+            user.IsApproved = true;
+            user.EmailConfirmed = true;
+
+            var userManagerMock = new Mock<UserManager<User>>(
+                new Mock<IUserStore<User>>().Object,
+                new Mock<IOptions<IdentityOptions>>().Object,
+                new Mock<IPasswordHasher<User>>().Object,
+                new IUserValidator<User>[0],
+                new IPasswordValidator<User>[0],
+                new Mock<ILookupNormalizer>().Object,
+                new Mock<IdentityErrorDescriber>().Object,
+                new Mock<IServiceProvider>().Object,
+                new Mock<ILogger<UserManager<User>>>().Object);
+
+            userManagerMock
+                .Setup(m => m.FindByEmailAsync("test@example.com"))
+                .ReturnsAsync(user);
+
+            var signInManagerMock = new Mock<SignInManager<User>>(
+                userManagerMock.Object,
+                new Mock<IHttpContextAccessor>().Object,
+                new Mock<IUserClaimsPrincipalFactory<User>>().Object,
+                new Mock<IOptions<IdentityOptions>>().Object,
+                new Mock<ILogger<SignInManager<User>>>().Object,
+                new Mock<IAuthenticationSchemeProvider>().Object,
+                new Mock<IUserConfirmation<User>>().Object);
+
+            signInManagerMock
+                .Setup(m => m.PasswordSignInAsync(user.UserName!, "password", false, true))
+                .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.LockedOut);
+
+            var controller = CreateController(userManagerMock.Object, signInManagerMock.Object);
+            var dto = new LoginDto { Email = "test@example.com", Password = "password" };
+
+            // Act
+            var result = await controller.Login(dto);
+
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            Assert.Same(dto, viewResult.Model);
+        }
+
+        [Fact]
+        public async Task Logout_SignsOutAndRedirects()
+        {
+            // Arrange
+            var signInManagerMock = new Mock<SignInManager<User>>(
+                CreateUserManager(),
+                new Mock<IHttpContextAccessor>().Object,
+                new Mock<IUserClaimsPrincipalFactory<User>>().Object,
+                new Mock<IOptions<IdentityOptions>>().Object,
+                new Mock<ILogger<SignInManager<User>>>().Object,
+                new Mock<IAuthenticationSchemeProvider>().Object,
+                new Mock<IUserConfirmation<User>>().Object);
+
+            signInManagerMock.Setup(m => m.SignOutAsync()).Returns(Task.CompletedTask);
+
+            var controller = CreateController(signInManager: signInManagerMock.Object);
+
+            // Act
+            var result = await controller.Logout();
+
+            // Assert
+            var redirectResult = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("Index", redirectResult.ActionName);
+            Assert.Equal("Tasks", redirectResult.ControllerName);
+            signInManagerMock.Verify(m => m.SignOutAsync(), Times.Once);
+        }
+
+        [Fact]
+        public void ForgotPassword_Get_ReturnsView()
+        {
+            // Arrange
+            var controller = CreateController();
+
+            // Act
+            var result = controller.ForgotPassword();
+
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            Assert.Null(viewResult.ViewName);
+        }
+
+        [Fact]
+        public async Task ForgotPassword_Post_InvalidModel_ReturnsView()
+        {
+            // Arrange
+            var controller = CreateController();
+            controller.ModelState.AddModelError("Email", "Email is required");
+
+            var dto = new ForgotPasswordDto();
+
+            // Act
+            var result = await controller.ForgotPassword(dto);
+
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            Assert.Same(dto, viewResult.Model);
+        }
+
+        [Fact]
+        public void ForgotPasswordConfirmation_ReturnsView()
+        {
+            // Arrange
+            var controller = CreateController();
+
+            // Act
+            var result = controller.ForgotPasswordConfirmation();
+
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            Assert.Null(viewResult.ViewName);
+        }
+
+        [Fact]
+        public void ResetPassword_Get_ReturnsViewWithDto()
+        {
+            // Arrange
+            var controller = CreateController();
+            const int userId = 123;
+            const string token = "test-token";
+
+            // Act
+            var result = controller.ResetPassword(userId, token);
+
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            Assert.NotNull(viewResult.Model);
+            var dto = Assert.IsType<ResetPasswordDto>(viewResult.Model);
+            Assert.Equal(userId.ToString(), dto.UserId);
+            Assert.Equal(token, dto.Token);
+        }
+
+        [Fact]
+        public async Task ResetPassword_Post_InvalidModel_ReturnsView()
+        {
+            // Arrange
+            var controller = CreateController();
+            controller.ModelState.AddModelError("NewPassword", "Password is required");
+
+            var dto = new ResetPasswordDto { UserId = "1", Token = "token" };
+
+            // Act
+            var result = await controller.ResetPassword(dto);
+
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            Assert.Same(dto, viewResult.Model);
+        }
+
+        [Fact]
+        public async Task ResetPassword_Post_UserNotFound_RedirectsWithoutError()
+        {
+            // Arrange
+            var userManagerMock = new Mock<UserManager<User>>(
+                new Mock<IUserStore<User>>().Object,
+                new Mock<IOptions<IdentityOptions>>().Object,
+                new Mock<IPasswordHasher<User>>().Object,
+                new IUserValidator<User>[0],
+                new IPasswordValidator<User>[0],
+                new Mock<ILookupNormalizer>().Object,
+                new Mock<IdentityErrorDescriber>().Object,
+                new Mock<IServiceProvider>().Object,
+                new Mock<ILogger<UserManager<User>>>().Object);
+
+            userManagerMock.Setup(m => m.FindByIdAsync(It.IsAny<string>()))
+                .ReturnsAsync((User)null);
+
+            var controller = CreateController(userManager: userManagerMock.Object);
+            var dto = new ResetPasswordDto { UserId = "999", Token = "token", NewPassword = "NewPass123!" };
+
+            // Act
+            var result = await controller.ResetPassword(dto);
+
+            // Assert
+            var redirectResult = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("ResetPasswordConfirmation", redirectResult.ActionName);
+        }
+
+        [Fact]
+        public void ResetPasswordConfirmation_ReturnsView()
+        {
+            // Arrange
+            var controller = CreateController();
+
+            // Act
+            var result = controller.ResetPasswordConfirmation();
+
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            Assert.Null(viewResult.ViewName);
+        }
+
+        [Fact]
+        public void AccessDenied_ReturnsView()
+        {
+            // Arrange
+            var controller = CreateController();
+
+            // Act
+            var result = controller.AccessDenied();
+
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            Assert.Null(viewResult.ViewName);
+        }
     }
 }

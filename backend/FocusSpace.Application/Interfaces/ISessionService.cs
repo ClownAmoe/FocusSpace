@@ -8,4 +8,5 @@ public interface ISessionService
     Task CompleteSessionAsync(UpdateSessionDto dto);
     Task PauseSessionAsync(int sessionId);
     Task ResumeSessionAsync(int sessionId);
+    Task<IEnumerable<SessionDto>> GetSessionsByUserIdAsync(int userId);
 }

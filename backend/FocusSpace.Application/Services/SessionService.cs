@@ -67,4 +67,22 @@ public class SessionService : ISessionService
         session.Status = SessionStatus.Ongoing;
         await _sessionRepository.SaveChangesAsync();
     }
+
+    public async Task<IEnumerable<SessionDto>> GetSessionsByUserIdAsync(int userId)
+    {
+        var sessions = await _sessionRepository.GetByUserIdAsync(userId);
+        return sessions.Select(s => new SessionDto
+        {
+            Id = s.Id,
+            UserId = s.UserId,
+            TaskId = s.TaskId,
+            TaskTitle = s.Task?.Title,
+            StartTime = s.StartTime,
+            EndTime = s.EndTime,
+            PlannedDuration = s.PlannedDuration,
+            ActualDuration = s.ActualDuration,
+            Status = s.Status.ToString(),
+            CreatedAt = s.CreatedAt
+        });
+    }
 }
