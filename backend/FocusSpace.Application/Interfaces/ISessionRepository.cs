@@ -6,5 +6,6 @@ public interface ISessionRepository
 {
     System.Threading.Tasks.Task AddAsync(Session session);
     Task<Session?> GetByIdAsync(int id);
+    Task<IEnumerable<Session>> GetByUserIdAsync(int userId);
     System.Threading.Tasks.Task SaveChangesAsync();
 }
