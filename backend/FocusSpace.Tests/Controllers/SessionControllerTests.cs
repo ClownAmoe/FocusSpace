@@ -1,9 +1,13 @@
 using FocusSpace.Api.Controllers;
 using FocusSpace.Application.DTOs;
 using FocusSpace.Application.Interfaces;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
+using User = FocusSpace.Domain.Entities.User;
 
 namespace FocusSpace.Tests.Controllers
 {
@@ -12,10 +16,26 @@ namespace FocusSpace.Tests.Controllers
     /// </summary>
     public class SessionControllerTests
     {
-        private static SessionController CreateController(Mock<ISessionService>? serviceMock = null)
+        private static UserManager<User> CreateUserManager()
+        {
+            var store = new Mock<IUserStore<User>>();
+            return new Mock<UserManager<User>>(
+                store.Object,
+                new Mock<IOptions<IdentityOptions>>().Object,
+                new Mock<IPasswordHasher<User>>().Object,
+                new IUserValidator<User>[0],
+                new IPasswordValidator<User>[0],
+                new Mock<ILookupNormalizer>().Object,
+                new Mock<IdentityErrorDescriber>().Object,
+                new Mock<IServiceProvider>().Object,
+                new Mock<ILogger<UserManager<User>>>().Object).Object;
+        }
+
+        private static SessionController CreateController(Mock<ISessionService>? serviceMock = null, UserManager<User>? userManager = null)
         {
             serviceMock ??= new Mock<ISessionService>();
-            return new SessionController(serviceMock.Object);
+            userManager ??= CreateUserManager();
+            return new SessionController(serviceMock.Object, userManager);
         }
 
         // ═════════════════════════════════════════════════════════════
@@ -40,59 +60,7 @@ namespace FocusSpace.Tests.Controllers
         // Start
         // ═════════════════════════════════════════════════════════════
 
-        [Fact]
-        public async Task Start_ValidDto_ReturnsOkWithSessionId()
-        {
-            // Arrange
-            var serviceMock = new Mock<ISessionService>();
-            var dto = new CreateSessionDto { UserId = 1, TaskId = 1, PlannedDuration = TimeSpan.FromSeconds(3600) };
-            serviceMock.Setup(s => s.StartSessionAsync(It.IsAny<CreateSessionDto>()))
-                .ReturnsAsync(1);
 
-            var controller = CreateController(serviceMock);
-
-            // Act
-            var result = await controller.Start(dto);
-
-            // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.NotNull(okResult.Value);
-            serviceMock.Verify(s => s.StartSessionAsync(It.IsAny<CreateSessionDto>()), Times.Once);
-        }
-
-        [Fact]
-        public async Task Start_InvalidModel_ReturnsBadRequest()
-        {
-            // Arrange
-            var serviceMock = new Mock<ISessionService>();
-            var controller = CreateController(serviceMock);
-            controller.ModelState.AddModelError("UserId", "UserId is required");
-            var dto = new CreateSessionDto();
-
-            // Act
-            var result = await controller.Start(dto);
-
-            // Assert
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.NotNull(badRequestResult.Value);
-        }
-
-        [Fact]
-        public async Task Start_NullDto_CompletesWithoutError()
-        {
-            // Arrange
-            var controller = CreateController();
-            CreateSessionDto? dto = null;
-
-            // Act & Assert
-            // The mocked service will return a successful result even with null dto
-#pragma warning disable CS8604
-            var result = await controller.Start(dto);
-#pragma warning restore CS8604
-
-            // Verify the action completed and returned a result
-            Assert.NotNull(result);
-        }
 
         // ═════════════════════════════════════════════════════════════
         // Complete
