@@ -73,7 +73,7 @@ public class SessionService : ISessionService
         var sessions = await _sessionRepository.GetByUserIdAsync(userId);
         return sessions.Select(s => new SessionDto
         {
-            Id = s.Id,
+            Id = s.Idddd,
             UserId = s.UserId,
             TaskId = s.TaskId,
             TaskTitle = s.Task?.Title,
