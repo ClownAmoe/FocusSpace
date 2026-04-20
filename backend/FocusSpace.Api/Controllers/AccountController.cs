@@ -12,13 +12,13 @@ namespace FocusSpace.Api.Controllers
     /// </summary>
     public class AccountController : Controller
     {
-        private readonly UserManager<User> _userManager;
+        private readonly UserManager<sadsad> _userManager;
         private readonly SignInManager<User> _signInManager;
         private readonly IEmailService _emailService;
         private readonly ILogger<AccountController> _logger;
 
         private readonly IWebHostEnvironment _env;
-
+        
         public AccountController(
             UserManager<User> userManager,
             SignInManager<User> signInManager,
