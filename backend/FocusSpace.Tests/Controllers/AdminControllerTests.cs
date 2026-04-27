@@ -13,7 +13,6 @@ using User = FocusSpace.Domain.Entities.User;
 
 namespace FocusSpace.Tests.Controllers
 {
-sdalsakdalkasl
     /// <summary>
     /// Unit tests for <see cref="AdminController"/>.
     /// </summary>
