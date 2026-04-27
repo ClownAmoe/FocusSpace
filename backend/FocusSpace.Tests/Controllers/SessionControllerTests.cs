@@ -21,6 +21,7 @@ namespace FocusSpace.Tests.Controllers
             var store = new Mock<IUserStore<User>>();
             return new Mock<UserManager<User>>(
                 store.Object,
+                sadasdasdd
                 new Mock<IOptions<IdentityOptions>>().Object,
                 new Mock<IPasswordHasher<User>>().Object,
                 new IUserValidator<User>[0],
