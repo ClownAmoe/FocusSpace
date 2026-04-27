@@ -8,6 +8,10 @@ on:
     branches:
       - deploy/19
   workflow_dispatch:
+  workflow_run:
+    workflows: ["SonarCloud"]
+    types:
+      - completed
 
 jobs:
   build:
