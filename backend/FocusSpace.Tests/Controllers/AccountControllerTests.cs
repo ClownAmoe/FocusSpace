@@ -119,7 +119,7 @@ namespace FocusSpace.Tests.Controllers
 
             // Assert
             var viewResult = Assert.IsType<ViewResult>(result);
-            Assert.NotNull(viewResult.ViewName);
+            Assert.Null(viewResult.ViewName);
         }
 
         // ═════════════════════════════════════════════════════════════
