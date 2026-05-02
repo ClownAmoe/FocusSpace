@@ -38,6 +38,7 @@ namespace FocusSpace.Api.Controllers
             ViewBag.BlockedUsers = await _context.Users.CountAsync(u => u.IsBlocked);
             ViewBag.PendingApproval = await _context.Users
                 .CountAsync(u => !u.IsApproved && u.EmailConfirmed);
+            ViewBag.TotalPlanets = await _context.Planets.CountAsync();
 
             return View();
         }
@@ -95,6 +96,9 @@ namespace FocusSpace.Api.Controllers
                 return NotFound(new { message = "User not found." });
 
             var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser is null)
+                return Unauthorized(new { message = "Current admin user not found." });
+
             if (currentUser.Id == id)
                 return BadRequest(new { message = "Cannot block yourself." });
 
@@ -138,6 +142,9 @@ namespace FocusSpace.Api.Controllers
                 return NotFound(new { message = "User not found." });
 
             var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser is null)
+                return Unauthorized(new { message = "Current admin user not found." });
+
             if (currentUser.Id == id)
                 return BadRequest(new { message = "Cannot promote yourself." });
 
@@ -165,6 +172,9 @@ namespace FocusSpace.Api.Controllers
                 return NotFound(new { message = "User not found." });
 
             var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser is null)
+                return Unauthorized(new { message = "Current admin user not found." });
+
             if (currentUser.Id == id)
                 return BadRequest(new { message = "Cannot delete yourself." });
 
@@ -176,6 +186,95 @@ namespace FocusSpace.Api.Controllers
                 user.Id, user.Email, User.Identity?.Name);
 
             return Ok(new { message = $"User {user.Email} has been deleted." });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetPlanets()
+        {
+            var planets = await _context.Planets
+                .OrderBy(p => p.OrderNumber)
+                .Select(p => new
+                {
+                    p.Id,
+                    p.Name,
+                    p.OrderNumber,
+                    p.Description,
+                    p.DistanceFromPrevious,
+                    p.ImageUrl,
+                    UsersCount = p.Users.Count
+                })
+                .ToListAsync();
+
+            return Json(planets);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreatePlanet([FromBody] CreatePlanetRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Name))
+                return BadRequest(new { message = "Planet name is required." });
+
+            if (request.OrderNumber <= 0)
+                return BadRequest(new { message = "Order number must be greater than zero." });
+
+            var normalizedName = request.Name.Trim();
+            var nameExists = await _context.Planets.AnyAsync(p => p.Name.ToLower() == normalizedName.ToLower());
+            if (nameExists)
+                return BadRequest(new { message = "Planet with this name already exists." });
+
+            var orderExists = await _context.Planets.AnyAsync(p => p.OrderNumber == request.OrderNumber);
+            if (orderExists)
+                return BadRequest(new { message = "Planet with this order number already exists." });
+
+            var planet = new Planet
+            {
+                Name = normalizedName,
+                OrderNumber = request.OrderNumber,
+                Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
+                DistanceFromPrevious = request.DistanceFromPrevious,
+                ImageUrl = string.IsNullOrWhiteSpace(request.ImageUrl) ? null : request.ImageUrl.Trim()
+            };
+
+            _context.Planets.Add(planet);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Planet {PlanetName} created by admin {Admin}",
+                planet.Name, User.Identity?.Name);
+
+            return Ok(new { message = $"Planet {planet.Name} created successfully." });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeletePlanet(int id)
+        {
+            var planet = await _context.Planets
+                .Include(p => p.Users)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (planet is null)
+                return NotFound(new { message = "Planet not found." });
+
+            if (planet.Users.Any())
+                return BadRequest(new { message = "Cannot delete planet that is assigned to users." });
+
+            _context.Planets.Remove(planet);
+            await _context.SaveChangesAsync();
+
+            _logger.LogWarning("Planet {PlanetName} deleted by admin {Admin}",
+                planet.Name, User.Identity?.Name);
+
+            return Ok(new { message = $"Planet {planet.Name} deleted." });
+        }
+
+        public sealed class CreatePlanetRequest
+        {
+            public string Name { get; set; } = string.Empty;
+            public int OrderNumber { get; set; }
+            public string? Description { get; set; }
+            public TimeSpan? DistanceFromPrevious { get; set; }
+            public string? ImageUrl { get; set; }
         }
     }
 }

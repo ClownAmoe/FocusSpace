@@ -160,5 +160,33 @@ namespace FocusSpace.Api.Controllers
             var tasks = await _taskService.GetTasksByUserIdAsync(await GetCurrentUserIdAsync());
             return Json(tasks);
         }
+
+        // POST /Tasks/CreateJson - AJAX endpoint for creating tasks from the home page
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateJson([FromBody] CreateTaskDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(new { message = "Invalid task data", errors = ModelState.Values.SelectMany(v => v.Errors) });
+
+            try
+            {
+                dto.UserId = await GetCurrentUserIdAsync();
+                _logger.LogInformation("User {UserId} creating task via AJAX: '{Title}'", dto.UserId, dto.Title);
+
+                var task = await _taskService.CreateTaskAsync(dto);
+                return Ok(new { id = task.Id, message = "Task created successfully" });
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogError("Error creating task: {Message}", ex.Message);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Unexpected error creating task: {Message}", ex.Message);
+                return StatusCode(500, new { message = "An unexpected error occurred" });
+            }
+        }
     }
 }
