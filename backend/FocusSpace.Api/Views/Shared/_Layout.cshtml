@@ -135,12 +135,6 @@
 
                     @if (User.Identity?.IsAuthenticated == true)
                     {
-                        <li class="nav-item">
-                            <a class="nav-link text-light" asp-controller="Tasks" asp-action="Index">
-                                My Tasks
-                            </a>
-                        </li>
-
                         @if (User.IsInRole("Admin"))
                         {
                             <li class="nav-item">

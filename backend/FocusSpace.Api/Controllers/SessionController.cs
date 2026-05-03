@@ -36,7 +36,12 @@ public class SessionController : Controller
         return sessions.FirstOrDefault(s => IsActiveStatus(s.Status));
     }
 
-    public IActionResult Index() => View();
+    public IActionResult Index()
+    {
+        var query = Request.QueryString.HasValue ? Request.QueryString.Value : string.Empty;
+        var suffix = string.IsNullOrEmpty(query) ? string.Empty : "&" + query.TrimStart('?');
+        return Redirect($"/?focus=1{suffix}");
+    }
 
     [HttpPost]
     public async Task<IActionResult> Start([FromBody] StartSessionRequest request)
@@ -132,6 +137,7 @@ public class SessionController : Controller
         {
             hasActive = true,
             sessionId = activeSession.Id,
+            taskId = activeSession.TaskId,
             status = activeSession.Status,
             plannedSeconds,
             remainingSeconds,

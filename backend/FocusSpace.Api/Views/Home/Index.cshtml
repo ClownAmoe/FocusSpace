@@ -249,6 +249,85 @@
     }
 </div>
 
+<div class="focus-overlay" id="focusModal" aria-hidden="true">
+    <div class="focus-modal" role="dialog" aria-modal="true" aria-label="Focus timer">
+        <button class="focus-close" id="focusModalClose" type="button" aria-label="Close">x</button>
+        <div class="focus-grid">
+            <section class="focus-panel focus-tasks">
+                <div class="focus-panel-header">
+                    <h3 class="focus-panel-title">Tasks</h3>
+                    <button class="focus-ghost-btn" id="refreshTasksBtn" type="button">Refresh</button>
+                </div>
+                <div class="task-search">
+                    <input id="taskSearchInput" type="text" placeholder="Search tasks" />
+                    <button class="focus-ghost-btn" id="clearTaskSelectionBtn" type="button">Clear</button>
+                </div>
+                <div id="selectedTaskDisplay" class="selected-task">No task selected.</div>
+                <div id="taskList" class="task-list"></div>
+                <div id="taskEmpty" class="task-empty">No tasks yet.</div>
+                <div class="task-create">
+                    <div class="task-create-title">Create task</div>
+                    <input id="newTaskTitle" type="text" placeholder="Task title" maxlength="300" />
+                    <textarea id="newTaskDescription" placeholder="Task description (optional)" maxlength="2000"></textarea>
+                    <button class="focus-primary-btn" id="createTaskBtn" type="button">Create task</button>
+                    <div id="taskCreateNote" class="task-note"></div>
+                </div>
+            </section>
+            <section class="focus-panel focus-timer">
+                <div class="timer-shell">
+                    <div class="timer-card" id="setup">
+                        <div class="timer-header">
+                            <h4 class="timer-title">Focus Timer</h4>
+                            <p class="timer-subtitle">Pick a duration and press start.</p>
+                        </div>
+
+                        <label class="timer-label" for="minutesInput">Minutes</label>
+                        <input type="number" id="minutesInput" class="timer-input" min="1" max="180" value="25" />
+                        <div id="inputError" class="timer-error" style="display:none;"></div>
+
+                        <button class="timer-primary" id="startTimerBtn" type="button">Start timer</button>
+                        <div id="startError" class="timer-error" style="display:none;"></div>
+                    </div>
+
+                    <div class="timer-card" id="timerDisplay" style="display:none">
+                        <div class="timer-header">
+                            <h4 class="timer-title">Focusing...</h4>
+                            <p id="activeTaskLabel" class="timer-subtitle"></p>
+                        </div>
+                        <div class="timer-count" id="timeLeft">00:00</div>
+                        <div class="timer-actions">
+                            <button class="timer-secondary" id="pauseBtn" type="button">Pause</button>
+                            <button class="timer-danger" id="cancelBtn" type="button">Cancel</button>
+                        </div>
+                        <div id="cancelConfirm" class="timer-confirm" style="display:none;">
+                            <p>Cancel this session?</p>
+                            <div class="timer-actions">
+                                <button class="timer-danger" id="confirmCancelBtn" type="button">Yes, cancel</button>
+                                <button class="timer-secondary" id="cancelBackBtn" type="button">No</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timer-card" id="planetInfoCard" style="display:none">
+                        <div class="planet-card-title">Planet</div>
+                        <div class="planet-card-name" id="planetInfoName"></div>
+                        <div class="planet-card-type" id="planetInfoType"></div>
+                        <div class="planet-card-description" id="planetInfoDescription"></div>
+                        <div class="planet-card-distance" id="planetInfoDistance"></div>
+                    </div>
+
+                    <div class="timer-card" id="doneMessage" style="display:none">
+                        <div class="timer-done">OK</div>
+                        <h4 class="timer-title">Session Complete!</h4>
+                        <p class="timer-subtitle">Great work. Take a short break.</p>
+                        <button class="timer-primary" id="resetTimerBtn" type="button">New session</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
 @if (!User.Identity!.IsAuthenticated)
 {
     <div class="text-center mt-4">
@@ -498,6 +577,366 @@
     @@keyframes rotate {
         from { transform: rotate(0deg); }
         to { transform: rotate(360deg); }
+    }
+
+    .timer-shell {
+        width: min(520px, 92vw);
+        margin: 40px auto 60px;
+        display: grid;
+        gap: 18px;
+    }
+
+    .timer-card {
+        background: linear-gradient(160deg, rgba(24, 26, 48, 0.95), rgba(16, 18, 34, 0.95));
+        border: 1px solid rgba(168, 139, 250, 0.25);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+        color: #e8e9ff;
+        text-align: center;
+    }
+
+    .timer-header {
+        margin-bottom: 18px;
+    }
+
+    .timer-title {
+        margin: 0 0 6px;
+        font-size: 20px;
+        color: #cdb7ff;
+        letter-spacing: 0.5px;
+    }
+
+    .timer-subtitle {
+        margin: 0;
+        color: #9a9fc2;
+        font-size: 13px;
+    }
+
+    .timer-label {
+        display: block;
+        text-align: left;
+        font-size: 12px;
+        color: #9a9fc2;
+        margin-bottom: 6px;
+    }
+
+    .timer-input {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(130, 122, 182, 0.4);
+        background: rgba(12, 14, 26, 0.8);
+        color: #e8e9ff;
+        margin-bottom: 12px;
+        text-align: center;
+        font-size: 16px;
+    }
+
+    .timer-primary,
+    .timer-secondary,
+    .timer-danger {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 10px;
+        border: none;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    }
+
+    .timer-primary {
+        background: #7c3aed;
+        color: #fff;
+        box-shadow: 0 10px 20px rgba(124, 58, 237, 0.35);
+    }
+
+    .timer-secondary {
+        background: rgba(31, 33, 54, 0.9);
+        color: #d9dbf5;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .timer-danger {
+        background: rgba(239, 68, 68, 0.9);
+        color: #fff;
+    }
+
+    .timer-actions {
+        display: grid;
+        gap: 10px;
+        margin-top: 16px;
+    }
+
+    .timer-count {
+        font-size: 54px;
+        font-weight: 700;
+        letter-spacing: 4px;
+        color: #a78bfa;
+        margin: 16px 0;
+    }
+
+    .timer-error {
+        color: #f87171;
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+
+    .timer-confirm {
+        margin-top: 14px;
+        color: #c8cbee;
+    }
+
+    .timer-done {
+        font-size: 36px;
+        margin-bottom: 10px;
+    }
+
+    .planet-card-title {
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 1px;
+        color: #9a9fc2;
+        margin-bottom: 10px;
+    }
+
+    .planet-card-name {
+        font-size: 18px;
+        font-weight: 700;
+        color: #e8e9ff;
+        margin-bottom: 6px;
+    }
+
+    .planet-card-type {
+        font-size: 12px;
+        color: #a78bfa;
+        margin-bottom: 8px;
+    }
+
+    .planet-card-description {
+        font-size: 13px;
+        color: #c8cbee;
+        line-height: 1.4;
+        margin-bottom: 8px;
+    }
+
+    .planet-card-distance {
+        font-size: 12px;
+        color: #9a9fc2;
+    }
+
+    body.focus-open {
+        overflow: hidden;
+    }
+
+    .focus-overlay {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(7, 10, 20, 0.6);
+        backdrop-filter: blur(10px);
+        z-index: 3000;
+    }
+
+    .focus-overlay.active {
+        display: flex;
+    }
+
+    .focus-modal {
+        width: min(980px, 96vw);
+        max-height: 90vh;
+        overflow: hidden;
+        border-radius: 18px;
+        background: rgba(16, 18, 34, 0.94);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+        position: relative;
+    }
+
+    .focus-close {
+        position: absolute;
+        top: 10px;
+        right: 12px;
+        border: none;
+        background: rgba(255, 255, 255, 0.08);
+        color: #c8cbee;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 700;
+    }
+
+    .focus-grid {
+        display: grid;
+        grid-template-columns: 1.1fr 1fr;
+        gap: 16px;
+        padding: 18px;
+        max-height: 90vh;
+        overflow: hidden;
+    }
+
+    .focus-panel {
+        background: rgba(20, 22, 40, 0.88);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        padding: 14px;
+        overflow: hidden;
+    }
+
+    .focus-panel-title {
+        margin: 0;
+        font-size: 16px;
+        color: #e8e9ff;
+    }
+
+    .focus-panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .focus-ghost-btn {
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: transparent;
+        color: #c8cbee;
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-size: 12px;
+        cursor: pointer;
+    }
+
+    .focus-primary-btn {
+        width: 100%;
+        border: none;
+        background: #7c3aed;
+        color: #fff;
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .task-search {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .task-search input {
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(10, 12, 24, 0.6);
+        color: #f0f2ff;
+        padding: 8px 10px;
+    }
+
+    .selected-task {
+        font-size: 12px;
+        color: #a78bfa;
+        margin-bottom: 8px;
+    }
+
+    .task-list {
+        max-height: 260px;
+        overflow-y: auto;
+        display: grid;
+        gap: 8px;
+        padding-right: 4px;
+        margin-bottom: 10px;
+    }
+
+    .task-item {
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 10px;
+        cursor: pointer;
+        background: rgba(12, 16, 30, 0.7);
+        transition: border 0.2s ease, background 0.2s ease;
+    }
+
+    .task-item.selected {
+        border-color: #7c3aed;
+        background: rgba(124, 58, 237, 0.18);
+    }
+
+    .task-title {
+        font-weight: 600;
+        color: #e8e9ff;
+        font-size: 13px;
+    }
+
+    .task-description {
+        font-size: 12px;
+        color: #b2b7d6;
+        margin-top: 4px;
+    }
+
+    .task-empty {
+        font-size: 12px;
+        color: #9a9fc2;
+        padding: 8px 0;
+        display: none;
+    }
+
+    .task-create {
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        margin-top: 8px;
+        padding-top: 10px;
+        display: grid;
+        gap: 8px;
+    }
+
+    .task-create-title {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: #b9c2ff;
+    }
+
+    .task-create input,
+    .task-create textarea {
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(10, 12, 24, 0.6);
+        color: #f0f2ff;
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+
+    .task-create textarea {
+        resize: vertical;
+        min-height: 70px;
+    }
+
+    .task-note {
+        font-size: 11px;
+        color: #9fdcff;
+        min-height: 14px;
+    }
+
+    .focus-timer .timer-shell {
+        margin: 0;
+        width: 100%;
+    }
+
+    .focus-timer .timer-card {
+        margin: 0 0 12px 0;
+    }
+
+    @@media (max-width: 900px) {
+        .focus-grid {
+            grid-template-columns: 1fr;
+            overflow-y: auto;
+            max-height: 86vh;
+        }
     }
 </style>
 
@@ -912,12 +1351,24 @@
             const data = await res.json().catch(() => null);
             if (!data || !data.hasActive || !data.sessionId) return false;
 
-            const label = encodeURIComponent(data.label || '');
+            if (data.taskId) {
+                setSelectedTaskById(data.taskId, data.label || '');
+            } else {
+                clearTaskSelection();
+            }
+
             const plannedSeconds = Number(data.plannedSeconds || 0);
             const remainingSeconds = Number(data.remainingSeconds || 0);
             const minutes = plannedSeconds > 0 ? Math.ceil(plannedSeconds / 60) : 25;
 
-            window.location.href = `/Session?autostart=1&sessionId=${data.sessionId}&minutes=${minutes}&plannedSeconds=${plannedSeconds}&remainingSeconds=${remainingSeconds}&label=${label}`;
+            await startTimer({
+                minutes,
+                sessionId: data.sessionId,
+                label: data.label || '',
+                plannedSeconds,
+                remainingSeconds,
+                taskId: data.taskId || null
+            });
             return true;
         }
 
@@ -926,65 +1377,16 @@
 
             const minutes = parseInt(taskMinutesInput.value, 10) || 25;
 
-            actionsNote.textContent = 'Starting timer...';
+            actionsNote.textContent = 'Opening timer...';
 
-            const payload = {
-                taskId: null,
-                plannedMinutes: minutes
-            };
-
-            let sessionResponse = await fetch('/Session/Start', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'RequestVerificationToken': getToken()
-                },
-                body: JSON.stringify(payload)
+            const planetInfo = getSelectedPlanetInfo();
+            openFocusModal();
+            await startTimer({
+                minutes,
+                planetInfo
             });
 
-            if (sessionResponse.status === 409) {
-                const replaceExisting = confirm('An active session already exists. Click OK to close it and start a new one, or Cancel to open the active session.');
-                if (replaceExisting) {
-                    sessionResponse = await fetch('/Session/Start', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'RequestVerificationToken': getToken()
-                        },
-                        body: JSON.stringify({
-                            ...payload,
-                            closeExisting: true
-                        })
-                    });
-                } else {
-                    const opened = await openActiveSession();
-                    if (!opened) actionsNote.textContent = 'Could not open active session.';
-                    return;
-                }
-            }
-
-            const sessionPayload = await sessionResponse.json().catch(() => null);
-            if (!sessionResponse.ok) {
-                actionsNote.textContent = sessionPayload?.message || 'Could not start timer.';
-                return;
-            }
-
-            const sessionId = sessionPayload?.sessionId;
-            const label = encodeURIComponent(infoName.textContent || '');
-            const planetInfo = getSelectedPlanetInfo();
-
-            if (planetInfo && sessionId) {
-                storeActiveSessionPlanetInfo(sessionId, planetInfo);
-            }
-
-            const planetQuery = planetInfo
-                ? `&planetName=${encodeURIComponent(planetInfo.name)}&planetType=${encodeURIComponent(planetInfo.type)}&planetDescription=${encodeURIComponent(planetInfo.description)}&planetDistance=${encodeURIComponent(planetInfo.distance)}`
-                : '';
-
-            actionsNote.textContent = 'Timer started.';
-            setTimeout(() => {
-                window.location.href = `/Session?autostart=1&sessionId=${sessionId}&minutes=${minutes}&label=${label}${planetQuery}`;
-            }, 350);
+            actionsNote.textContent = '';
         }
 
         startSessionButton.addEventListener('click', startSessionFromPanel);
@@ -1018,19 +1420,556 @@
             startOrbitLoop();
         }
 
+        const focusModal = document.getElementById('focusModal');
+        const focusModalClose = document.getElementById('focusModalClose');
+        const startTimerBtn = document.getElementById('startTimerBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+        const cancelBackBtn = document.getElementById('cancelBackBtn');
+        const resetTimerBtn = document.getElementById('resetTimerBtn');
+
+        const taskListEl = document.getElementById('taskList');
+        const taskEmptyEl = document.getElementById('taskEmpty');
+        const taskSearchInput = document.getElementById('taskSearchInput');
+        const refreshTasksBtn = document.getElementById('refreshTasksBtn');
+        const clearTaskSelectionBtn = document.getElementById('clearTaskSelectionBtn');
+        const selectedTaskDisplay = document.getElementById('selectedTaskDisplay');
+        const newTaskTitle = document.getElementById('newTaskTitle');
+        const newTaskDescription = document.getElementById('newTaskDescription');
+        const createTaskBtn = document.getElementById('createTaskBtn');
+        const taskCreateNote = document.getElementById('taskCreateNote');
+
+        const planetInfoCard = document.getElementById('planetInfoCard');
+        const planetInfoName = document.getElementById('planetInfoName');
+        const planetInfoType = document.getElementById('planetInfoType');
+        const planetInfoDescription = document.getElementById('planetInfoDescription');
+        const planetInfoDistance = document.getElementById('planetInfoDistance');
+
+        const minutesInput = document.getElementById('minutesInput');
+        const activeTaskLabel = document.getElementById('activeTaskLabel');
+
+        let allTasks = [];
+        let selectedTaskId = null;
+        let selectedTaskTitle = '';
+
+        let intervalId = null;
+        let secondsLeft = 0;
+        let totalSeconds = 0;
+        let currentSessionId = null;
+        let isPaused = false;
+
+        function openFocusModal() {
+            if (!focusModal) return;
+            focusModal.classList.add('active');
+            focusModal.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('focus-open');
+            loadTasks();
+            updateSelectedTaskDisplay();
+        }
+
+        function closeFocusModal() {
+            if (!focusModal) return;
+            focusModal.classList.remove('active');
+            focusModal.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('focus-open');
+        }
+
+        function updateSelectedTaskDisplay() {
+            if (!selectedTaskDisplay) return;
+            if (selectedTaskTitle) {
+                selectedTaskDisplay.textContent = `Selected task: ${selectedTaskTitle}`;
+            } else {
+                selectedTaskDisplay.textContent = 'No task selected.';
+            }
+
+            if (!currentSessionId) {
+                activeTaskLabel.textContent = selectedTaskTitle || '';
+            }
+        }
+
+        function clearTaskSelection() {
+            selectedTaskId = null;
+            selectedTaskTitle = '';
+            updateSelectedTaskDisplay();
+            renderTasks();
+        }
+
+        function setSelectedTaskById(taskId, title) {
+            selectedTaskId = taskId;
+            selectedTaskTitle = title || '';
+            updateSelectedTaskDisplay();
+            renderTasks();
+        }
+
+        function selectTask(task) {
+            selectedTaskId = task.id;
+            selectedTaskTitle = task.title;
+            updateSelectedTaskDisplay();
+            renderTasks();
+        }
+
+        function renderTasks() {
+            if (!taskListEl || !taskSearchInput) return;
+
+            const term = taskSearchInput.value.trim().toLowerCase();
+            const filtered = allTasks.filter(t => {
+                const title = (t.title || '').toLowerCase();
+                const desc = (t.description || '').toLowerCase();
+                return !term || title.includes(term) || desc.includes(term);
+            });
+
+            if (!filtered.length) {
+                taskListEl.innerHTML = '';
+                taskEmptyEl.style.display = 'block';
+                return;
+            }
+
+            taskEmptyEl.style.display = 'none';
+            taskListEl.innerHTML = filtered.map(t => {
+                const selectedClass = t.id === selectedTaskId ? ' selected' : '';
+                const desc = t.description ? escapeHtml(t.description) : 'No description';
+                return `
+                    <div class="task-item${selectedClass}" data-id="${t.id}">
+                        <div class="task-title">${escapeHtml(t.title)}</div>
+                        <div class="task-description">${desc}</div>
+                    </div>`;
+            }).join('');
+
+            taskListEl.querySelectorAll('.task-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    const id = parseInt(el.dataset.id || '0', 10);
+                    const task = allTasks.find(t => t.id === id);
+                    if (task) selectTask(task);
+                });
+            });
+        }
+
+        async function loadTasks() {
+            if (!taskListEl || !taskEmptyEl) return;
+
+            if (!isAuthenticated) {
+                allTasks = [];
+                taskListEl.innerHTML = '';
+                taskEmptyEl.textContent = 'Log in to manage tasks.';
+                taskEmptyEl.style.display = 'block';
+                return;
+            }
+
+            try {
+                const res = await fetch('/Tasks/GetUserTasks');
+                if (!res.ok) throw new Error('Failed to load tasks');
+                allTasks = await res.json();
+                renderTasks();
+            } catch {
+                taskListEl.innerHTML = '';
+                taskEmptyEl.textContent = 'Could not load tasks.';
+                taskEmptyEl.style.display = 'block';
+            }
+        }
+
+        async function createTask() {
+            if (!isAuthenticated) return;
+            const title = (newTaskTitle?.value || '').trim();
+            const description = (newTaskDescription?.value || '').trim();
+
+            if (!title) {
+                taskCreateNote.textContent = 'Title is required.';
+                return;
+            }
+
+            taskCreateNote.textContent = 'Creating task...';
+
+            const res = await fetch('/Tasks/CreateJson', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': getToken()
+                },
+                body: JSON.stringify({
+                    title,
+                    description: description || null
+                })
+            });
+
+            const data = await res.json().catch(() => null);
+            if (!res.ok) {
+                taskCreateNote.textContent = data?.message || 'Could not create task.';
+                return;
+            }
+
+            newTaskTitle.value = '';
+            newTaskDescription.value = '';
+            taskCreateNote.textContent = 'Task created.';
+            await loadTasks();
+            if (data?.id) setSelectedTaskById(data.id, title);
+        }
+
+        function getPlanetInfoFromParams(params) {
+            const name = params.get('planetName');
+            const type = params.get('planetType');
+            const description = params.get('planetDescription');
+            const distance = params.get('planetDistance');
+
+            if (!name && !type && !description && !distance) return null;
+
+            return {
+                name: name ? decodeURIComponent(name) : '',
+                type: type ? decodeURIComponent(type) : '',
+                description: description ? decodeURIComponent(description) : '',
+                distance: distance ? decodeURIComponent(distance) : ''
+            };
+        }
+
+        function loadPlanetInfoForSession(sessionId) {
+            if (!sessionId) return null;
+
+            const raw = localStorage.getItem('activeSessionPlanet');
+            if (!raw) return null;
+
+            try {
+                const parsed = JSON.parse(raw);
+                if (parsed?.sessionId === String(sessionId)) return parsed.planetInfo;
+            } catch {
+                return null;
+            }
+
+            return null;
+        }
+
+        function clearPlanetInfoForSession(sessionId) {
+            if (!sessionId) return;
+
+            const raw = localStorage.getItem('activeSessionPlanet');
+            if (!raw) return;
+
+            try {
+                const parsed = JSON.parse(raw);
+                if (parsed?.sessionId === String(sessionId)) {
+                    localStorage.removeItem('activeSessionPlanet');
+                }
+            } catch {
+            }
+        }
+
+        function applyPlanetInfo(info) {
+            if (!planetInfoCard) return;
+
+            if (!info || !(info.name || info.type || info.description || info.distance)) {
+                planetInfoCard.style.display = 'none';
+                return;
+            }
+
+            planetInfoName.textContent = info.name || 'Planet';
+            planetInfoType.textContent = info.type ? `Type: ${info.type}` : '';
+            planetInfoDescription.textContent = info.description || '';
+            planetInfoDistance.textContent = info.distance ? `Distance: ${info.distance}` : '';
+            planetInfoCard.style.display = 'block';
+        }
+
+        function showError(elementId, message) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            el.textContent = message;
+            el.style.display = 'block';
+        }
+
+        function hideError(elementId) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            el.textContent = '';
+            el.style.display = 'none';
+        }
+
+        async function startTimer(options = {}) {
+            hideError('inputError');
+            hideError('startError');
+
+            if (!isAuthenticated) {
+                showError('startError', 'Log in to start the timer.');
+                return;
+            }
+
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+
+            const plannedSecondsOption = Number.isFinite(options.plannedSeconds) && options.plannedSeconds > 0
+                ? options.plannedSeconds
+                : null;
+            const minutes = Number.isFinite(options.minutes) && options.minutes > 0
+                ? options.minutes
+                : (plannedSecondsOption ? Math.ceil(plannedSecondsOption / 60) : parseInt(minutesInput.value, 10));
+            if (!minutes || minutes < 1) {
+                showError('inputError', 'Please enter a valid number of minutes.');
+                return;
+            }
+
+            const plannedSeconds = plannedSecondsOption ?? (minutes * 60);
+            const remainingSeconds = Number.isFinite(options.remainingSeconds) && options.remainingSeconds >= 0
+                ? Math.min(options.remainingSeconds, plannedSeconds)
+                : plannedSeconds;
+            minutesInput.value = Math.ceil(plannedSeconds / 60);
+
+            const providedSessionId = options.sessionId ? parseInt(options.sessionId, 10) : null;
+            const taskId = options.taskId ?? selectedTaskId ?? null;
+            const label = options.label || selectedTaskTitle || '';
+
+            if (taskId && label) setSelectedTaskById(taskId, label);
+
+            if (!providedSessionId) {
+                const payload = {
+                    taskId,
+                    plannedMinutes: minutes
+                };
+
+                let res = await fetch('/Session/Start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.status === 409) {
+                    const replaceExisting = confirm('An active session already exists. Click OK to close it and start a new one, or Cancel to open the active session.');
+                    if (replaceExisting) {
+                        res = await fetch('/Session/Start', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                ...payload,
+                                closeExisting: true
+                            })
+                        });
+                    } else {
+                        const opened = await openActiveSession();
+                        if (!opened) showError('startError', 'Active session not found.');
+                        return;
+                    }
+                }
+
+                if (!res.ok) {
+                    const errText = await res.text().catch(() => '');
+                    console.error('Start session failed:', res.status, errText);
+                    showError('startError', 'Failed to start session. Please try again.');
+                    return;
+                }
+
+                const data = await res.json();
+                currentSessionId = data.sessionId;
+            } else {
+                currentSessionId = providedSessionId;
+            }
+
+            if (options.planetInfo) {
+                storeActiveSessionPlanetInfo(currentSessionId, options.planetInfo);
+            }
+
+            applyPlanetInfo(loadPlanetInfoForSession(currentSessionId));
+
+            totalSeconds = plannedSeconds;
+            secondsLeft = remainingSeconds;
+            isPaused = false;
+
+            activeTaskLabel.textContent = label || selectedTaskTitle || 'No task selected';
+            document.getElementById('setup').style.display = 'none';
+            document.getElementById('timerDisplay').style.display = 'block';
+            document.getElementById('doneMessage').style.display = 'none';
+            updateDisplay();
+
+            if (secondsLeft <= 0) {
+                await finishTimer(true);
+                return;
+            }
+
+            intervalId = setInterval(() => {
+                secondsLeft--;
+                updateDisplay();
+                if (secondsLeft <= 0) finishTimer(true);
+            }, 1000);
+        }
+
+        async function togglePause() {
+            if (!currentSessionId) return;
+
+            if (!isPaused) {
+                clearInterval(intervalId);
+                intervalId = null;
+                isPaused = true;
+                pauseBtn.textContent = 'Resume';
+
+                await fetch('/Session/Pause', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(currentSessionId)
+                });
+            } else {
+                isPaused = false;
+                pauseBtn.textContent = 'Pause';
+
+                await fetch('/Session/Resume', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(currentSessionId)
+                });
+
+                intervalId = setInterval(() => {
+                    secondsLeft--;
+                    updateDisplay();
+                    if (secondsLeft <= 0) finishTimer(true);
+                }, 1000);
+            }
+        }
+
+        function updateDisplay() {
+            const m = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
+            const s = String(secondsLeft % 60).padStart(2, '0');
+            document.getElementById('timeLeft').textContent = `${m}:${s}`;
+        }
+
+        async function finishTimer(completed) {
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+
+            hideCancelConfirm();
+
+            if (!currentSessionId) {
+                resetTimer();
+                return;
+            }
+
+            await fetch('/Session/Complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: currentSessionId,
+                    status: completed ? 'Completed' : 'Aborted',
+                    endTime: new Date().toISOString(),
+                    actualDuration: formatDuration(totalSeconds - secondsLeft)
+                })
+            });
+
+            clearPlanetInfoForSession(currentSessionId);
+            applyPlanetInfo(null);
+
+            document.getElementById('timerDisplay').style.display = 'none';
+            if (completed) {
+                document.getElementById('doneMessage').style.display = 'block';
+            } else {
+                resetTimer();
+            }
+        }
+
+        function cancelTimer() {
+            document.getElementById('cancelConfirm').style.display = 'block';
+        }
+
+        function hideCancelConfirm() {
+            document.getElementById('cancelConfirm').style.display = 'none';
+        }
+
+        function resetTimer() {
+            currentSessionId = null;
+            isPaused = false;
+            document.getElementById('doneMessage').style.display = 'none';
+            document.getElementById('timerDisplay').style.display = 'none';
+            document.getElementById('setup').style.display = 'block';
+            applyPlanetInfo(null);
+            updateSelectedTaskDisplay();
+        }
+
+        function formatDuration(seconds) {
+            const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
+            const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+            const s = String(seconds % 60).padStart(2, '0');
+            return `${h}:${m}:${s}`;
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        function openFocusFromQuery() {
+            const params = new URLSearchParams(window.location.search);
+            const shouldOpen = params.get('focus') === '1' || params.get('autostart') === '1' || params.get('sessionId');
+            if (!shouldOpen) return;
+
+            openFocusModal();
+
+            const sessionIdParam = params.get('sessionId');
+            if (sessionIdParam) {
+                const minutesParam = parseInt(params.get('minutes') || '', 10);
+                const plannedSecondsParam = parseInt(params.get('plannedSeconds') || '', 10);
+                const remainingSecondsParam = parseInt(params.get('remainingSeconds') || '', 10);
+                const labelParam = params.get('label');
+                const planetInfoFromParams = getPlanetInfoFromParams(params);
+
+                const plannedSeconds = Number.isFinite(plannedSecondsParam) && plannedSecondsParam > 0
+                    ? plannedSecondsParam
+                    : null;
+                const remainingSeconds = Number.isFinite(remainingSecondsParam) && remainingSecondsParam >= 0
+                    ? remainingSecondsParam
+                    : null;
+                const minutes = Number.isFinite(minutesParam) && minutesParam > 0
+                    ? minutesParam
+                    : (plannedSeconds ? Math.ceil(plannedSeconds / 60) : 25);
+                const label = labelParam ? decodeURIComponent(labelParam) : '';
+
+                startTimer({
+                    minutes,
+                    sessionId: sessionIdParam,
+                    label,
+                    plannedSeconds,
+                    remainingSeconds,
+                    planetInfo: planetInfoFromParams
+                });
+                return;
+            }
+
+            openActiveSession();
+        }
+
+        if (focusModalClose) {
+            focusModalClose.addEventListener('click', closeFocusModal);
+        }
+
+        if (focusModal) {
+            focusModal.addEventListener('click', (event) => {
+                if (event.target === focusModal) closeFocusModal();
+            });
+        }
+
+        if (startTimerBtn) startTimerBtn.addEventListener('click', () => startTimer());
+        if (pauseBtn) pauseBtn.addEventListener('click', togglePause);
+        if (cancelBtn) cancelBtn.addEventListener('click', cancelTimer);
+        if (confirmCancelBtn) confirmCancelBtn.addEventListener('click', () => finishTimer(false));
+        if (cancelBackBtn) cancelBackBtn.addEventListener('click', hideCancelConfirm);
+        if (resetTimerBtn) resetTimerBtn.addEventListener('click', resetTimer);
+
+        if (taskSearchInput) taskSearchInput.addEventListener('input', renderTasks);
+        if (refreshTasksBtn) refreshTasksBtn.addEventListener('click', loadTasks);
+        if (clearTaskSelectionBtn) clearTaskSelectionBtn.addEventListener('click', clearTaskSelection);
+        if (createTaskBtn) createTaskBtn.addEventListener('click', createTask);
+
+        if (!isAuthenticated) {
+            if (startTimerBtn) startTimerBtn.disabled = true;
+            if (createTaskBtn) createTaskBtn.disabled = true;
+        }
+
         const openFocusTimerBtn = document.getElementById('openFocusTimerBtn');
         if (openFocusTimerBtn) {
             openFocusTimerBtn.addEventListener('click', async (event) => {
                 event.preventDefault();
-
-                try {
-                    const opened = await openActiveSession();
-                    if (opened) return;
-                } catch (err) {
-                }
-
-                window.location.href = '/Session';
+                openFocusModal();
+                await openActiveSession();
             });
         }
+
+        openFocusFromQuery();
     </script>
 }
