@@ -1,12 +1,12 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy ASP.Net Core app to Azure Web App - focusspace-api
+name: Build and deploy ASP.Net Core app to Azure Web App - focusspace-19
 
 on:
   push:
     branches:
-      - main
+      - deploy/19
   workflow_dispatch:
 
 jobs:
@@ -43,7 +43,6 @@ jobs:
     permissions:
       id-token: write #This is required for requesting the JWT
       contents: read #This is required for actions/checkout
-
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
@@ -53,15 +52,15 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_40A795B6AD39428F864F8BAAE47CD758 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_5051F8ED581A4C40B24F54FCEE63358F }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_383ACD7C69BC440AB5C1BFD80DD13D7C }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_D71ED5C43F374006881D5CAB7836A35D }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_754C1127228149728FA3572128767EDD }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_C65B97F0C63748D8ACA19953AB864C4C }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'focusspace-api'
+          app-name: 'focusspace-19'
           slot-name: 'Production'
           package: .
           
