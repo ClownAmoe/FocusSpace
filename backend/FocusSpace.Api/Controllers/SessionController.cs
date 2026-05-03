@@ -1,6 +1,7 @@
 ﻿using FocusSpace.Application.DTOs;
 using FocusSpace.Application.Interfaces;
 using FocusSpace.Domain.Entities;
+using FocusSpace.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -25,6 +26,16 @@ public class SessionController : Controller
         return user?.Id ?? throw new InvalidOperationException("Authenticated user not found.");
     }
 
+    private static bool IsActiveStatus(string status)
+        => string.Equals(status, nameof(SessionStatus.Ongoing), StringComparison.OrdinalIgnoreCase)
+           || string.Equals(status, nameof(SessionStatus.Paused), StringComparison.OrdinalIgnoreCase);
+
+    private async Task<SessionDto?> GetActiveSessionDtoAsync(int userId)
+    {
+        var sessions = await _sessionService.GetSessionsByUserIdAsync(userId);
+        return sessions.FirstOrDefault(s => IsActiveStatus(s.Status));
+    }
+
     public IActionResult Index() => View();
 
     [HttpPost]
@@ -33,6 +44,32 @@ public class SessionController : Controller
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
         var userId = await GetCurrentUserIdAsync();
+
+        var activeSession = await GetActiveSessionDtoAsync(userId);
+        if (activeSession is not null)
+        {
+            if (!request.CloseExisting)
+            {
+                return Conflict(new
+                {
+                    message = "Active session already exists.",
+                    sessionId = activeSession.Id
+                });
+            }
+
+            var now = DateTime.UtcNow;
+            var actualDuration = now - activeSession.StartTime;
+            if (actualDuration < TimeSpan.Zero) actualDuration = TimeSpan.Zero;
+
+            await _sessionService.CompleteSessionAsync(new UpdateSessionDto
+            {
+                Id = activeSession.Id,
+                Status = SessionStatus.Aborted.ToString(),
+                EndTime = now,
+                ActualDuration = actualDuration.ToString("c")
+            });
+        }
+
         var dto = new CreateSessionDto
         {
             UserId = userId,
@@ -75,10 +112,37 @@ public class SessionController : Controller
         var sessions = await _sessionService.GetSessionsByUserIdAsync(userId);
         return Json(sessions);
     }
+
+    [HttpGet]
+    public async Task<IActionResult> GetActiveSession()
+    {
+        var userId = await GetCurrentUserIdAsync();
+        var activeSession = await GetActiveSessionDtoAsync(userId);
+
+        if (activeSession is null)
+            return Json(new { hasActive = false });
+
+        var plannedSeconds = (int)Math.Ceiling(activeSession.PlannedDuration.TotalSeconds);
+        if (plannedSeconds < 1) plannedSeconds = 1;
+
+        var elapsedSeconds = (int)Math.Floor((DateTime.UtcNow - activeSession.StartTime).TotalSeconds);
+        var remainingSeconds = Math.Max(0, plannedSeconds - elapsedSeconds);
+
+        return Json(new
+        {
+            hasActive = true,
+            sessionId = activeSession.Id,
+            status = activeSession.Status,
+            plannedSeconds,
+            remainingSeconds,
+            label = activeSession.TaskTitle ?? string.Empty
+        });
+    }
 }
 
 public sealed class StartSessionRequest
 {
     public int? TaskId { get; set; }
     public int PlannedMinutes { get; set; }
+    public bool CloseExisting { get; set; }
 }

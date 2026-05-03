@@ -37,6 +37,14 @@
         </div>
     </div>
 
+    <div class="timer-card" id="planetInfoCard" style="display:none">
+        <div class="planet-card-title">Planet</div>
+        <div class="planet-card-name" id="planetInfoName"></div>
+        <div class="planet-card-type" id="planetInfoType"></div>
+        <div class="planet-card-description" id="planetInfoDescription"></div>
+        <div class="planet-card-distance" id="planetInfoDistance"></div>
+    </div>
+
     <div class="timer-card" id="doneMessage" style="display:none">
         <div class="timer-done">✅</div>
         <h4 class="timer-title">Session Complete!</h4>
@@ -159,6 +167,39 @@
         font-size: 36px;
         margin-bottom: 10px;
     }
+
+    .planet-card-title {
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 1px;
+        color: #9a9fc2;
+        margin-bottom: 10px;
+    }
+
+    .planet-card-name {
+        font-size: 18px;
+        font-weight: 700;
+        color: #e8e9ff;
+        margin-bottom: 6px;
+    }
+
+    .planet-card-type {
+        font-size: 12px;
+        color: #a78bfa;
+        margin-bottom: 8px;
+    }
+
+    .planet-card-description {
+        font-size: 13px;
+        color: #c8cbee;
+        line-height: 1.4;
+        margin-bottom: 8px;
+    }
+
+    .planet-card-distance {
+        font-size: 12px;
+        color: #9a9fc2;
+    }
 </style>
 
 @section Scripts {
@@ -168,21 +209,137 @@
         let totalSeconds = 0;
         let currentSessionId = null;
         let isPaused = false;
+        const planetInfoCard = document.getElementById('planetInfoCard');
+        const planetInfoName = document.getElementById('planetInfoName');
+        const planetInfoType = document.getElementById('planetInfoType');
+        const planetInfoDescription = document.getElementById('planetInfoDescription');
+        const planetInfoDistance = document.getElementById('planetInfoDistance');
+
+        function getPlanetInfoFromParams(params) {
+            const name = params.get('planetName');
+            const type = params.get('planetType');
+            const description = params.get('planetDescription');
+            const distance = params.get('planetDistance');
+
+            if (!name && !type && !description && !distance) return null;
+
+            return {
+                name: name ? decodeURIComponent(name) : '',
+                type: type ? decodeURIComponent(type) : '',
+                description: description ? decodeURIComponent(description) : '',
+                distance: distance ? decodeURIComponent(distance) : ''
+            };
+        }
+
+        function storePlanetInfoForSession(sessionId, info) {
+            if (!sessionId || !info) return;
+
+            const payload = {
+                sessionId: String(sessionId),
+                planetInfo: info,
+                storedAt: new Date().toISOString()
+            };
+
+            localStorage.setItem('activeSessionPlanet', JSON.stringify(payload));
+        }
+
+        function loadPlanetInfoForSession(sessionId) {
+            if (!sessionId) return null;
+
+            const raw = localStorage.getItem('activeSessionPlanet');
+            if (!raw) return null;
+
+            try {
+                const parsed = JSON.parse(raw);
+                if (parsed?.sessionId === String(sessionId)) return parsed.planetInfo;
+            } catch {
+                return null;
+            }
+
+            return null;
+        }
+
+        function clearPlanetInfoForSession(sessionId) {
+            if (!sessionId) return;
+
+            const raw = localStorage.getItem('activeSessionPlanet');
+            if (!raw) return;
+
+            try {
+                const parsed = JSON.parse(raw);
+                if (parsed?.sessionId === String(sessionId)) {
+                    localStorage.removeItem('activeSessionPlanet');
+                }
+            } catch {
+            }
+        }
+
+        function applyPlanetInfo(info) {
+            if (!planetInfoCard) return;
+
+            if (!info || !(info.name || info.type || info.description || info.distance)) {
+                planetInfoCard.style.display = 'none';
+                return;
+            }
+
+            planetInfoName.textContent = info.name || 'Planet';
+            planetInfoType.textContent = info.type ? `Type: ${info.type}` : '';
+            planetInfoDescription.textContent = info.description || '';
+            planetInfoDistance.textContent = info.distance ? `Distance: ${info.distance}` : '';
+            planetInfoCard.style.display = 'block';
+        }
+
+        async function openActiveSession() {
+            const res = await fetch('/Session/GetActiveSession');
+            if (!res.ok) return false;
+
+            const data = await res.json().catch(() => null);
+            if (!data || !data.hasActive || !data.sessionId) return false;
+
+            const minutes = data.plannedSeconds > 0 ? Math.ceil(data.plannedSeconds / 60) : 25;
+
+            await startTimer({
+                minutes,
+                sessionId: data.sessionId,
+                label: data.label || '',
+                plannedSeconds: data.plannedSeconds,
+                remainingSeconds: data.remainingSeconds
+            });
+
+            return true;
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             const params = new URLSearchParams(window.location.search);
             const sessionIdParam = params.get('sessionId');
             const minutesParam = parseInt(params.get('minutes') || '', 10);
+            const plannedSecondsParam = parseInt(params.get('plannedSeconds') || '', 10);
+            const remainingSecondsParam = parseInt(params.get('remainingSeconds') || '', 10);
             const labelParam = params.get('label');
+            const planetInfoFromParams = getPlanetInfoFromParams(params);
             const autoStart = params.get('autostart') === '1' || !!sessionIdParam;
 
+            if (planetInfoFromParams && sessionIdParam) {
+                storePlanetInfoForSession(sessionIdParam, planetInfoFromParams);
+            }
+
             if (autoStart) {
-                const minutes = Number.isFinite(minutesParam) && minutesParam > 0 ? minutesParam : 25;
+                const plannedSeconds = Number.isFinite(plannedSecondsParam) && plannedSecondsParam > 0
+                    ? plannedSecondsParam
+                    : null;
+                const remainingSeconds = Number.isFinite(remainingSecondsParam) && remainingSecondsParam >= 0
+                    ? remainingSecondsParam
+                    : null;
+                const minutes = Number.isFinite(minutesParam) && minutesParam > 0
+                    ? minutesParam
+                    : (plannedSeconds ? Math.ceil(plannedSeconds / 60) : 25);
                 const label = labelParam ? decodeURIComponent(labelParam) : '';
                 startTimer({
                     minutes,
                     sessionId: sessionIdParam,
-                    label
+                    label,
+                    plannedSeconds,
+                    remainingSeconds
                 });
             }
         });
@@ -204,25 +361,54 @@
             hideError('startError');
 
             const minutesInput = document.getElementById('minutesInput');
-            const minutes = options.minutes ?? parseInt(minutesInput.value, 10);
+            const plannedSecondsOption = Number.isFinite(options.plannedSeconds) && options.plannedSeconds > 0
+                ? options.plannedSeconds
+                : null;
+            const minutes = Number.isFinite(options.minutes) && options.minutes > 0
+                ? options.minutes
+                : (plannedSecondsOption ? Math.ceil(plannedSecondsOption / 60) : parseInt(minutesInput.value, 10));
             if (!minutes || minutes < 1) {
                 showError('inputError', 'Please enter a valid number of minutes.');
                 return;
             }
-            minutesInput.value = minutes;
+            const plannedSeconds = plannedSecondsOption ?? (minutes * 60);
+            const remainingSeconds = Number.isFinite(options.remainingSeconds) && options.remainingSeconds >= 0
+                ? Math.min(options.remainingSeconds, plannedSeconds)
+                : plannedSeconds;
+            minutesInput.value = Math.ceil(plannedSeconds / 60);
 
             const providedSessionId = options.sessionId ? parseInt(options.sessionId, 10) : null;
             const label = options.label || '';
 
             if (!providedSessionId) {
-                const res = await fetch('/Session/Start', {
+                const payload = {
+                    taskId: null,
+                    plannedMinutes: minutes
+                };
+
+                let res = await fetch('/Session/Start', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        taskId: null,
-                        plannedMinutes: minutes
-                    })
+                    body: JSON.stringify(payload)
                 });
+
+                if (res.status === 409) {
+                    const replaceExisting = confirm('An active session already exists. Click OK to close it and start a new one, or Cancel to open the active session.');
+                    if (replaceExisting) {
+                        res = await fetch('/Session/Start', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                ...payload,
+                                closeExisting: true
+                            })
+                        });
+                    } else {
+                        const opened = await openActiveSession();
+                        if (!opened) showError('startError', 'Active session not found.');
+                        return;
+                    }
+                }
 
                 if (!res.ok) {
                     const errText = await res.text().catch(() => '');
@@ -237,14 +423,21 @@
                 currentSessionId = providedSessionId;
             }
 
-            totalSeconds = minutes * 60;
-            secondsLeft = totalSeconds;
+            applyPlanetInfo(loadPlanetInfoForSession(currentSessionId));
+
+            totalSeconds = plannedSeconds;
+            secondsLeft = remainingSeconds;
             isPaused = false;
 
             document.getElementById('activeTaskLabel').textContent = label ? label : '';
             document.getElementById('setup').style.display = 'none';
             document.getElementById('timerDisplay').style.display = 'block';
             updateDisplay();
+
+            if (secondsLeft <= 0) {
+                await finishTimer(true);
+                return;
+            }
 
             intervalId = setInterval(() => {
                 secondsLeft--;
@@ -310,6 +503,9 @@
                 })
             });
 
+            clearPlanetInfoForSession(currentSessionId);
+            applyPlanetInfo(null);
+
             document.getElementById('timerDisplay').style.display = 'none';
             if (completed) {
                 document.getElementById('doneMessage').style.display = 'block';
@@ -331,6 +527,7 @@
             isPaused = false;
             document.getElementById('doneMessage').style.display = 'none';
             document.getElementById('setup').style.display = 'block';
+            applyPlanetInfo(null);
         }
 
         function formatDuration(seconds) {

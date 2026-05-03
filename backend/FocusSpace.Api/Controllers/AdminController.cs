@@ -1,4 +1,5 @@
 using FocusSpace.Domain.Entities;
+using FocusSpace.Domain.Enums;
 using FocusSpace.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -34,7 +35,7 @@ namespace FocusSpace.Api.Controllers
             ViewBag.TotalUsers = await _context.Users.CountAsync();
             ViewBag.ActiveTasks = await _context.Tasks.CountAsync();
             ViewBag.ActiveSessions = await _context.Sessions
-                .CountAsync(s => s.Status == FocusSpace.Domain.Enums.SessionStatus.Ongoing);
+                .CountAsync(s => s.Status == SessionStatus.Ongoing || s.Status == SessionStatus.Paused);
             ViewBag.BlockedUsers = await _context.Users.CountAsync(u => u.IsBlocked);
             ViewBag.PendingApproval = await _context.Users
                 .CountAsync(u => !u.IsApproved && u.EmailConfirmed);
@@ -63,6 +64,56 @@ namespace FocusSpace.Api.Controllers
                 .ToListAsync();
 
             return Json(users);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetActiveSessions()
+        {
+            var sessions = await _context.Sessions
+                .Where(s => s.Status == SessionStatus.Ongoing || s.Status == SessionStatus.Paused)
+                .Include(s => s.User)
+                .Include(s => s.Task)
+                .OrderByDescending(s => s.StartTime)
+                .Select(s => new
+                {
+                    s.Id,
+                    s.UserId,
+                    UserName = s.User.UserName,
+                    UserEmail = s.User.Email,
+                    TaskTitle = s.Task != null ? s.Task.Title : null,
+                    s.StartTime,
+                    s.PlannedDuration,
+                    Status = s.Status.ToString()
+                })
+                .ToListAsync();
+
+            return Json(sessions);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CloseSession(int id)
+        {
+            var session = await _context.Sessions.FirstOrDefaultAsync(s => s.Id == id);
+            if (session is null)
+                return NotFound(new { message = "Session not found." });
+
+            if (session.Status == SessionStatus.Completed || session.Status == SessionStatus.Aborted)
+                return BadRequest(new { message = "Session is already closed." });
+
+            var now = DateTime.UtcNow;
+            session.EndTime = now;
+
+            var actualDuration = now - session.StartTime;
+            session.ActualDuration = actualDuration < TimeSpan.Zero ? TimeSpan.Zero : actualDuration;
+            session.Status = SessionStatus.Aborted;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogWarning("Session {SessionId} closed by admin {Admin}",
+                session.Id, User.Identity?.Name);
+
+            return Ok(new { message = "Session closed." });
         }
 
       

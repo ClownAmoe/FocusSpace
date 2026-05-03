@@ -218,7 +218,7 @@
 
 <div class="container mt-4 mb-4">
     <div class="d-flex justify-content-center mb-3">
-        <a href="/Session" class="btn btn-outline-info">Open Focus Timer</a>
+        <a href="/Session" class="btn btn-outline-info" id="openFocusTimerBtn">Open Focus Timer</a>
     </div>
     <h3 class="text-center mb-4">Available Planets</h3>
     @if (Model is not null && Model.Any())
@@ -878,6 +878,49 @@
         // Close panel button
         closePlanetPanel.addEventListener('click', hidePlanetPanel);
 
+        function getSelectedPlanetInfo() {
+            if (!selectedPlanetId) return null;
+
+            const node = planetNodes.find(p => p.dataset.id === String(selectedPlanetId));
+            if (!node) return null;
+
+            return {
+                id: node.dataset.id || '',
+                name: node.dataset.name || '',
+                type: node.dataset.type || '',
+                description: (node.dataset.description || '').trim(),
+                distance: (node.dataset.distance || '').trim()
+            };
+        }
+
+        function storeActiveSessionPlanetInfo(sessionId, planetInfo) {
+            if (!sessionId || !planetInfo) return;
+
+            const payload = {
+                sessionId: String(sessionId),
+                planetInfo,
+                storedAt: new Date().toISOString()
+            };
+
+            localStorage.setItem('activeSessionPlanet', JSON.stringify(payload));
+        }
+
+        async function openActiveSession() {
+            const res = await fetch('/Session/GetActiveSession');
+            if (!res.ok) return false;
+
+            const data = await res.json().catch(() => null);
+            if (!data || !data.hasActive || !data.sessionId) return false;
+
+            const label = encodeURIComponent(data.label || '');
+            const plannedSeconds = Number(data.plannedSeconds || 0);
+            const remainingSeconds = Number(data.remainingSeconds || 0);
+            const minutes = plannedSeconds > 0 ? Math.ceil(plannedSeconds / 60) : 25;
+
+            window.location.href = `/Session?autostart=1&sessionId=${data.sessionId}&minutes=${minutes}&plannedSeconds=${plannedSeconds}&remainingSeconds=${remainingSeconds}&label=${label}`;
+            return true;
+        }
+
         async function startSessionFromPanel() {
             if (!selectedPlanetId) return;
 
@@ -885,17 +928,40 @@
 
             actionsNote.textContent = 'Starting timer...';
 
-            const sessionResponse = await fetch('/Session/Start', {
+            const payload = {
+                taskId: null,
+                plannedMinutes: minutes
+            };
+
+            let sessionResponse = await fetch('/Session/Start', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'RequestVerificationToken': getToken()
                 },
-                body: JSON.stringify({
-                    taskId: null,
-                    plannedMinutes: minutes
-                })
+                body: JSON.stringify(payload)
             });
+
+            if (sessionResponse.status === 409) {
+                const replaceExisting = confirm('An active session already exists. Click OK to close it and start a new one, or Cancel to open the active session.');
+                if (replaceExisting) {
+                    sessionResponse = await fetch('/Session/Start', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': getToken()
+                        },
+                        body: JSON.stringify({
+                            ...payload,
+                            closeExisting: true
+                        })
+                    });
+                } else {
+                    const opened = await openActiveSession();
+                    if (!opened) actionsNote.textContent = 'Could not open active session.';
+                    return;
+                }
+            }
 
             const sessionPayload = await sessionResponse.json().catch(() => null);
             if (!sessionResponse.ok) {
@@ -905,10 +971,19 @@
 
             const sessionId = sessionPayload?.sessionId;
             const label = encodeURIComponent(infoName.textContent || '');
+            const planetInfo = getSelectedPlanetInfo();
+
+            if (planetInfo && sessionId) {
+                storeActiveSessionPlanetInfo(sessionId, planetInfo);
+            }
+
+            const planetQuery = planetInfo
+                ? `&planetName=${encodeURIComponent(planetInfo.name)}&planetType=${encodeURIComponent(planetInfo.type)}&planetDescription=${encodeURIComponent(planetInfo.description)}&planetDistance=${encodeURIComponent(planetInfo.distance)}`
+                : '';
 
             actionsNote.textContent = 'Timer started.';
             setTimeout(() => {
-                window.location.href = `/Session?autostart=1&sessionId=${sessionId}&minutes=${minutes}&label=${label}`;
+                window.location.href = `/Session?autostart=1&sessionId=${sessionId}&minutes=${minutes}&label=${label}${planetQuery}`;
             }, 350);
         }
 
@@ -941,6 +1016,21 @@
             setRocketTransform(initialPos.x + orbitRadius, initialPos.y, 90);
             resetZoom();
             startOrbitLoop();
+        }
+
+        const openFocusTimerBtn = document.getElementById('openFocusTimerBtn');
+        if (openFocusTimerBtn) {
+            openFocusTimerBtn.addEventListener('click', async (event) => {
+                event.preventDefault();
+
+                try {
+                    const opened = await openActiveSession();
+                    if (opened) return;
+                } catch (err) {
+                }
+
+                window.location.href = '/Session';
+            });
         }
     </script>
 }

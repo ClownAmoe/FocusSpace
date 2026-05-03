@@ -91,6 +91,25 @@
     .planet-meta { color: #999; font-size: 12px; margin-top: 5px; }
     .planet-description { color: #c7c7c7; font-size: 13px; margin-top: 6px; }
 
+    .session-list { margin-top: 6px; }
+    .session-item {
+        background-color: #252525;
+        border-left: 4px solid #ff9800;
+        border-radius: 8px;
+        padding: 14px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-start;
+    }
+    .session-title { font-weight: bold; color: #e0e0e0; font-size: 14px; }
+    .session-meta { color: #999; font-size: 12px; margin-top: 4px; }
+    .session-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .session-badge { display: inline-block; padding: 4px 8px; border-radius: 5px; font-size: 11px; font-weight: bold; }
+    .status-ongoing { background-color: #1565c0; color: #fff; }
+    .status-paused { background-color: #f57c00; color: #000; }
+
     @@media (max-width: 768px) {
         .form-grid { grid-template-columns: 1fr; }
     }
@@ -112,9 +131,9 @@
             <h3>Active Tasks</h3>
             <div class="number">@ViewBag.ActiveTasks</div>
         </div>
-        <div class="admin-card success">
+        <div class="admin-card success" onclick="openSessionsModal()">
             <h3>Active Sessions</h3>
-            <div class="number">@ViewBag.ActiveSessions</div>
+            <div class="number" id="activeSessionsCount">@ViewBag.ActiveSessions</div>
         </div>
         <div class="admin-card @(ViewBag.BlockedUsers > 0 ? "warning" : "")">
             <h3>Blocked Users</h3>
@@ -139,6 +158,7 @@
     <div class="btn-group-admin">
         <button class="btn btn-orange" onclick="openModal('all')">Manage Users</button>
         <button class="btn btn-success" onclick="openPlanetsModal()">Manage Planets</button>
+        <button class="btn btn-info" onclick="openSessionsModal()">Active Sessions</button>
         <button class="btn btn-info" onclick="openModal('pending')">
             Pending (@ViewBag.PendingApproval)
         </button>
@@ -211,6 +231,23 @@
     </div>
 </div>
 
+<div class="modal-overlay" id="sessionsModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Active Sessions</h2>
+            <button class="modal-close" onclick="closeSessionsModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <p style="margin-top:0;color:#999;font-size:13px;">
+                Closing a session will mark it as Aborted and set the end time to now.
+            </p>
+            <div id="sessionsContainer" class="session-list">
+                <div class="loading">Loading…</div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @* Прихований antiforgery токен для fetch-запитів *@
 <form id="af-form" style="display:none">
     @Html.AntiForgeryToken()
@@ -219,6 +256,7 @@
 <script>
     let allUsers = [];
     let allPlanets = [];
+    let activeSessions = [];
     let currentTab = 'all';
 
     function getToken() {
@@ -244,6 +282,15 @@
 
     function closePlanetsModal() {
         document.getElementById('planetsModal').classList.remove('active');
+    }
+
+    function openSessionsModal() {
+        document.getElementById('sessionsModal').classList.add('active');
+        loadActiveSessions();
+    }
+
+    function closeSessionsModal() {
+        document.getElementById('sessionsModal').classList.remove('active');
     }
 
     function setTab(tab) {
@@ -273,6 +320,20 @@
             .catch(() => {
                 document.getElementById('planetsContainer').innerHTML =
                     '<p style="text-align:center;color:#f44336">Error loading planets.</p>';
+            });
+    }
+
+    function loadActiveSessions() {
+        fetch('/Admin/GetActiveSessions')
+            .then(r => r.json())
+            .then(sessions => {
+                activeSessions = sessions;
+                updateActiveSessionsCount(activeSessions.length);
+                renderActiveSessions();
+            })
+            .catch(() => {
+                document.getElementById('sessionsContainer').innerHTML =
+                    '<p style="text-align:center;color:#f44336">Error loading sessions.</p>';
             });
     }
 
@@ -357,6 +418,42 @@
         }).join('');
     }
 
+    function renderActiveSessions() {
+        const container = document.getElementById('sessionsContainer');
+        if (!activeSessions.length) {
+            container.innerHTML = '<p style="text-align:center;color:#999">No active sessions.</p>';
+            return;
+        }
+
+        container.innerHTML = activeSessions.map(s => {
+            const status = (s.status || '').toLowerCase();
+            const statusClass = status === 'paused' ? 'status-paused' : 'status-ongoing';
+            const taskLabel = s.taskTitle ? `Task: ${escapeHtml(s.taskTitle)}` : 'No task';
+            const start = new Date(s.startTime);
+            const startLabel = isNaN(start.getTime())
+                ? 'Unknown'
+                : start.toLocaleString('uk-UA', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+            return `
+                <div class="session-item" id="session-${s.id}">
+                    <div>
+                        <div class="session-title">Session #${s.id} - ${escapeHtml(s.userName || 'Unknown user')}</div>
+                        <div class="session-meta">${escapeHtml(s.userEmail || '')} &nbsp;|&nbsp; ${taskLabel}</div>
+                        <div class="session-meta">Started: ${startLabel} &nbsp;|&nbsp; Planned: ${formatDuration(s.plannedDuration)}</div>
+                    </div>
+                    <div class="session-actions">
+                        <span class="session-badge ${statusClass}">${escapeHtml(s.status || 'Ongoing')}</span>
+                        <button class="btn btn-small btn-danger" onclick="closeSession(${s.id})">Close</button>
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    function updateActiveSessionsCount(count) {
+        const el = document.getElementById('activeSessionsCount');
+        if (el) el.textContent = count;
+    }
+
     async function createPlanet(event) {
         event.preventDefault();
 
@@ -405,6 +502,42 @@
             loadPlanets();
             setTimeout(() => window.location.reload(), 250);
         }
+    }
+
+    async function closeSession(id) {
+        if (!confirm('Close this active session?')) return;
+
+        const r = await fetch(`/Admin/CloseSession/${id}`, {
+            method: 'POST',
+            headers: { 'RequestVerificationToken': getToken() }
+        });
+
+        const d = await r.json().catch(() => ({}));
+        alert(d.message ?? 'Request failed.');
+
+        if (r.ok) {
+            loadActiveSessions();
+        }
+    }
+
+    function formatDuration(ts) {
+        if (!ts) return '-';
+        const parts = ts.split(':');
+        if (parts.length >= 2) {
+            const h = parseInt(parts[0], 10);
+            const m = parseInt(parts[1], 10);
+            if (!Number.isNaN(h) && !Number.isNaN(m)) {
+                return h > 0 ? `${h}h ${m}m` : `${m}m`;
+            }
+        }
+        return ts;
+    }
+
+    function escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
     }
 
     async function approveUser(id) {
@@ -468,5 +601,9 @@
 
     document.getElementById('planetsModal').addEventListener('click', function(e) {
         if (e.target === this) closePlanetsModal();
+    });
+
+    document.getElementById('sessionsModal').addEventListener('click', function(e) {
+        if (e.target === this) closeSessionsModal();
     });
 </script>
