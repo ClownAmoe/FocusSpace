@@ -20,7 +20,7 @@ namespace FocusSpace.Tests.Controllers
 
             // Assert
             var viewResult = Assert.IsType<ViewResult>(result);
-            Assert.NotNull(viewResult.ViewName); // Default view name is null (uses action name)
+            Assert.Null(viewResult.ViewName); // Default view name is null (uses action name)
         }
 
         [Fact]

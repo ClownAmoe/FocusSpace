@@ -85,4 +85,41 @@ public class SessionService : ISessionService
             CreatedAt = s.CreatedAt
         });
     }
+
+    public async Task<FocusRecommendationDto> GetFocusRecommendationAsync(int userId)
+    {
+        var sessions = (await _sessionRepository.GetByUserIdAsync(userId))
+            .Where(s => s.ActualDuration.HasValue && s.EndTime.HasValue)
+            .ToList();
+
+        if (!sessions.Any())
+        {
+            return new FocusRecommendationDto
+            {
+                RecommendedDuration = TimeSpan.FromMinutes(25),
+                BestFocusPeriod = "Any time",
+                Details = "Not enough completed sessions yet to create a recommendation."
+            };
+        }
+
+        var averageMinutes = sessions.Average(s => s.ActualDuration!.Value.TotalMinutes);
+        var recommendedDuration = TimeSpan.FromMinutes(Math.Max(1, Math.Round(averageMinutes)));
+
+        var bestHourGroup = sessions
+            .GroupBy(s => s.StartTime.Hour)
+            .OrderByDescending(g => g.Count())
+            .ThenBy(g => g.Key)
+            .First();
+
+        var startHour = bestHourGroup.Key;
+        var endHour = (startHour + 1) % 24;
+        var bestFocusPeriod = $"{startHour:00}:00 - {endHour:00}:00";
+
+        return new FocusRecommendationDto
+        {
+            RecommendedDuration = recommendedDuration,
+            BestFocusPeriod = bestFocusPeriod,
+            Details = $"Based on {sessions.Count} completed session(s)."
+        };
+    }
 }

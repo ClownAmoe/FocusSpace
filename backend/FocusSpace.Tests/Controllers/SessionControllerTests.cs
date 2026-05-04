@@ -181,5 +181,54 @@ namespace FocusSpace.Tests.Controllers
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
             Assert.NotNull(badRequestResult.Value);
         }
+
+        [Fact]
+        public async Task GetFocusRecommendation_ReturnsRecommendationJson()
+        {
+            // Arrange
+            var recommendation = new FocusRecommendationDto
+            {
+                RecommendedDuration = TimeSpan.FromMinutes(50),
+                BestFocusPeriod = "09:00 - 10:00",
+                Details = "Based on session history."
+            };
+
+            var serviceMock = new Mock<ISessionService>();
+            serviceMock.Setup(s => s.GetFocusRecommendationAsync(It.IsAny<int>()))
+                .ReturnsAsync(recommendation);
+
+            var userManagerMock = new Mock<UserManager<User>>(
+                new Mock<IUserStore<User>>().Object,
+                new Mock<IOptions<IdentityOptions>>().Object,
+                new Mock<IPasswordHasher<User>>().Object,
+                new IUserValidator<User>[0],
+                new IPasswordValidator<User>[0],
+                new Mock<ILookupNormalizer>().Object,
+                new Mock<IdentityErrorDescriber>().Object,
+                new Mock<IServiceProvider>().Object,
+                new Mock<ILogger<UserManager<User>>>().Object);
+
+            var user = new User { Id = 10, UserName = "user10" };
+            userManagerMock.Setup(m => m.GetUserAsync(It.IsAny<System.Security.Claims.ClaimsPrincipal>()))
+                .ReturnsAsync(user);
+
+            var controller = CreateController(serviceMock, userManagerMock.Object);
+            controller.ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext
+            {
+                HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext
+                {
+                    User = new System.Security.Claims.ClaimsPrincipal(
+                        new System.Security.Claims.ClaimsIdentity(
+                            new[] { new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, "user10") }))
+                }
+            };
+
+            // Act
+            var result = await controller.GetFocusRecommendation();
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.Equal(recommendation, jsonResult.Value);
+        }
     }
 }

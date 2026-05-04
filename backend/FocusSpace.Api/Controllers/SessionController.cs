@@ -75,6 +75,14 @@ public class SessionController : Controller
         var sessions = await _sessionService.GetSessionsByUserIdAsync(userId);
         return Json(sessions);
     }
+
+    [HttpGet]
+    public async Task<IActionResult> GetFocusRecommendation()
+    {
+        var userId = await GetCurrentUserIdAsync();
+        var recommendation = await _sessionService.GetFocusRecommendationAsync(userId);
+        return Json(recommendation);
+    }
 }
 
 public sealed class StartSessionRequest

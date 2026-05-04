@@ -30,6 +30,15 @@
                 <div id="startError" class="text-danger small mt-2" style="display:none;"></div>
             </div>
 
+            <div class="card p-4 text-center mb-3" id="recommendationCard" style="background:#17172f; border-color:#3d3d60; display:none;">
+                <h5 class="mb-3" style="color:#a78bfa;">💡 Рекомендація фокусу</h5>
+                <p class="mb-1" style="color:#e0e0f0;">Рекомендована тривалість:</p>
+                <h3 id="recommendedDuration" style="color:#7c6aaa;">—</h3>
+                <p class="mb-1" style="color:#e0e0f0;">Кращий час фокусування:</p>
+                <h4 id="bestFocusPeriod" style="color:#7c6aaa;">—</h4>
+                <p id="recommendationDetails" class="small mt-3" style="color:#c0b7ff;">—</p>
+            </div>
+
             <div class="card p-4 text-center" id="timerDisplay" style="display:none">
                 <h4 class="mb-1" style="color:#a0a0c0;">Focusing...</h4>
                 <p id="activeTaskLabel" class="small mb-2" style="color:#7c6aaa;"></p>
@@ -88,7 +97,51 @@
             } catch (e) {
                 console.error('Failed to load tasks:', e);
             }
+
+            await loadFocusRecommendation();
         });
+
+        async function loadFocusRecommendation() {
+            const card = document.getElementById('recommendationCard');
+            const durationEl = document.getElementById('recommendedDuration');
+            const periodEl = document.getElementById('bestFocusPeriod');
+            const detailsEl = document.getElementById('recommendationDetails');
+
+            durationEl.textContent = 'Loading...';
+            periodEl.textContent = '';
+            detailsEl.textContent = '';
+            card.style.display = 'block';
+
+            try {
+                const res = await fetch('/Session/GetFocusRecommendation');
+                if (!res.ok) throw new Error('Failed to load recommendation');
+                const recommendation = await res.json();
+                const durationValue = recommendation.recommendedDuration;
+                const minutes = typeof durationValue === 'string'
+                    ? parseTimeSpanToMinutes(durationValue)
+                    : durationValue?.totalMinutes ?? null;
+
+                durationEl.textContent = minutes != null
+                    ? `${Math.round(minutes)} хв.`
+                    : String(durationValue);
+                periodEl.textContent = recommendation.bestFocusPeriod;
+                detailsEl.textContent = recommendation.details;
+            } catch (e) {
+                durationEl.textContent = 'Недоступно';
+                periodEl.textContent = '-';
+                detailsEl.textContent = 'Не вдалося отримати рекомендацію. Спробуйте пізніше.';
+                console.error('Focus recommendation error:', e);
+            }
+        }
+
+        function parseTimeSpanToMinutes(timeSpanText) {
+            const parts = timeSpanText.split(':').map(Number);
+            if (parts.length === 3) {
+                const [hours, minutes, seconds] = parts;
+                return hours * 60 + minutes + seconds / 60;
+            }
+            return null;
+        }
 
         function showError(elementId, message) {
             const el = document.getElementById(elementId);
