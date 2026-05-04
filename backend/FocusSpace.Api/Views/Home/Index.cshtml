@@ -262,7 +262,7 @@
                     <input id="taskSearchInput" type="text" placeholder="Search tasks" />
                     <button class="focus-ghost-btn" id="clearTaskSelectionBtn" type="button">Clear</button>
                 </div>
-                <div id="selectedTaskDisplay" class="selected-task">No task selected.</div>
+                <div id="selectedTaskDisplay" class="selected-task">Bound task: None</div>
                 <div id="taskList" class="task-list"></div>
                 <div id="taskEmpty" class="task-empty">No tasks yet.</div>
                 <div class="task-create">
@@ -287,6 +287,7 @@
 
                         <button class="timer-primary" id="startTimerBtn" type="button">Start timer</button>
                         <div id="startError" class="timer-error" style="display:none;"></div>
+                        <div id="taskBindingStatus" class="task-binding">Bound task: None</div>
                     </div>
 
                     <div class="timer-card" id="timerDisplay" style="display:none">
@@ -844,6 +845,13 @@
         margin-bottom: 8px;
     }
 
+    .task-binding {
+        margin-top: 8px;
+        font-size: 12px;
+        color: #c8cbee;
+        text-align: left;
+    }
+
     .task-list {
         max-height: 260px;
         overflow-y: auto;
@@ -862,6 +870,23 @@
         transition: border 0.2s ease, background 0.2s ease;
     }
 
+    .task-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .task-delete-btn {
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: transparent;
+        color: #ff8a80;
+        padding: 4px 8px;
+        border-radius: 8px;
+        font-size: 11px;
+        cursor: pointer;
+    }
+
     .task-item.selected {
         border-color: #7c3aed;
         background: rgba(124, 58, 237, 0.18);
@@ -877,6 +902,12 @@
         font-size: 12px;
         color: #b2b7d6;
         margin-top: 4px;
+    }
+
+    .task-bound {
+        margin-top: 6px;
+        font-size: 11px;
+        color: #a78bfa;
     }
 
     .task-empty {
@@ -1435,6 +1466,7 @@
         const refreshTasksBtn = document.getElementById('refreshTasksBtn');
         const clearTaskSelectionBtn = document.getElementById('clearTaskSelectionBtn');
         const selectedTaskDisplay = document.getElementById('selectedTaskDisplay');
+        const taskBindingStatus = document.getElementById('taskBindingStatus');
         const newTaskTitle = document.getElementById('newTaskTitle');
         const newTaskDescription = document.getElementById('newTaskDescription');
         const createTaskBtn = document.getElementById('createTaskBtn');
@@ -1477,14 +1509,17 @@
 
         function updateSelectedTaskDisplay() {
             if (!selectedTaskDisplay) return;
-            if (selectedTaskTitle) {
-                selectedTaskDisplay.textContent = `Selected task: ${selectedTaskTitle}`;
-            } else {
-                selectedTaskDisplay.textContent = 'No task selected.';
-            }
+            const boundLabel = selectedTaskTitle
+                ? `Bound task: ${selectedTaskTitle}`
+                : 'Bound task: None';
+
+            selectedTaskDisplay.textContent = boundLabel;
+            if (taskBindingStatus) taskBindingStatus.textContent = boundLabel;
 
             if (!currentSessionId) {
-                activeTaskLabel.textContent = selectedTaskTitle || '';
+                activeTaskLabel.textContent = selectedTaskTitle
+                    ? `Bound task: ${selectedTaskTitle}`
+                    : 'No task bound';
             }
         }
 
@@ -1529,10 +1564,15 @@
             taskListEl.innerHTML = filtered.map(t => {
                 const selectedClass = t.id === selectedTaskId ? ' selected' : '';
                 const desc = t.description ? escapeHtml(t.description) : 'No description';
+                const boundBadge = t.id === selectedTaskId ? '<div class="task-bound">Bound to timer</div>' : '';
                 return `
                     <div class="task-item${selectedClass}" data-id="${t.id}">
-                        <div class="task-title">${escapeHtml(t.title)}</div>
+                        <div class="task-header">
+                            <div class="task-title">${escapeHtml(t.title)}</div>
+                            <button class="task-delete-btn" data-id="${t.id}" type="button">Delete</button>
+                        </div>
                         <div class="task-description">${desc}</div>
+                        ${boundBadge}
                     </div>`;
             }).join('');
 
@@ -1541,6 +1581,14 @@
                     const id = parseInt(el.dataset.id || '0', 10);
                     const task = allTasks.find(t => t.id === id);
                     if (task) selectTask(task);
+                });
+            });
+
+            taskListEl.querySelectorAll('.task-delete-btn').forEach(btn => {
+                btn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    const id = parseInt(btn.dataset.id || '0', 10);
+                    if (id) deleteTaskById(id);
                 });
             });
         }
@@ -1603,6 +1651,32 @@
             taskCreateNote.textContent = 'Task created.';
             await loadTasks();
             if (data?.id) setSelectedTaskById(data.id, title);
+        }
+
+        async function deleteTaskById(taskId) {
+            if (!isAuthenticated) return;
+            if (!confirm('Delete this task?')) return;
+
+            const res = await fetch('/Tasks/DeleteJson', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': getToken()
+                },
+                body: JSON.stringify({ id: taskId })
+            });
+
+            const data = await res.json().catch(() => null);
+            if (!res.ok) {
+                alert(data?.message || 'Could not delete task.');
+                return;
+            }
+
+            if (selectedTaskId === taskId) {
+                clearTaskSelection();
+            }
+
+            await loadTasks();
         }
 
         function getPlanetInfoFromParams(params) {
@@ -1771,7 +1845,10 @@
             secondsLeft = remainingSeconds;
             isPaused = false;
 
-            activeTaskLabel.textContent = label || selectedTaskTitle || 'No task selected';
+            const boundLabel = label || selectedTaskTitle;
+            activeTaskLabel.textContent = boundLabel
+                ? `Bound task: ${boundLabel}`
+                : 'No task bound';
             document.getElementById('setup').style.display = 'none';
             document.getElementById('timerDisplay').style.display = 'block';
             document.getElementById('doneMessage').style.display = 'none';
@@ -1850,6 +1927,11 @@
                     actualDuration: formatDuration(totalSeconds - secondsLeft)
                 })
             });
+
+            if (completed && selectedTaskId) {
+                await loadTasks();
+                clearTaskSelection();
+            }
 
             clearPlanetInfoForSession(currentSessionId);
             applyPlanetInfo(null);

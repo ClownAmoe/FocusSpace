@@ -188,5 +188,27 @@ namespace FocusSpace.Api.Controllers
                 return StatusCode(500, new { message = "An unexpected error occurred" });
             }
         }
+
+        // POST /Tasks/DeleteJson - AJAX endpoint for deleting tasks from the home page
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteJson([FromBody] DeleteTaskRequest request)
+        {
+            if (request is null || request.Id <= 0)
+                return BadRequest(new { message = "Invalid task id." });
+
+            var userId = await GetCurrentUserIdAsync();
+            var task = await _taskService.GetTaskByIdAsync(request.Id);
+            if (task is null || task.UserId != userId)
+                return NotFound(new { message = "Task not found." });
+
+            await _taskService.DeleteTaskAsync(request.Id);
+            return Ok(new { message = "Task deleted successfully." });
+        }
+
+        public sealed class DeleteTaskRequest
+        {
+            public int Id { get; set; }
+        }
     }
 }

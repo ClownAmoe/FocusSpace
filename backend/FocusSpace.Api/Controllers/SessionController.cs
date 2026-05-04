@@ -13,11 +13,13 @@ public class SessionController : Controller
 {
     private readonly ISessionService _sessionService;
     private readonly UserManager<User> _userManager;
+    private readonly ITaskService _taskService;
 
-    public SessionController(ISessionService sessionService, UserManager<User> userManager)
+    public SessionController(ISessionService sessionService, UserManager<User> userManager, ITaskService taskService)
     {
         _sessionService = sessionService;
         _userManager = userManager;
+        _taskService = taskService;
     }
 
     private async Task<int> GetCurrentUserIdAsync()
@@ -91,6 +93,20 @@ public class SessionController : Controller
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         await _sessionService.CompleteSessionAsync(dto);
+
+        if (string.Equals(dto.Status, nameof(SessionStatus.Completed), StringComparison.OrdinalIgnoreCase))
+        {
+            var session = await _sessionService.GetSessionByIdAsync(dto.Id);
+            if (session?.TaskId is int taskId)
+            {
+                var userId = await GetCurrentUserIdAsync();
+                if (session.UserId == userId)
+                {
+                    await _taskService.DeleteTaskAsync(taskId);
+                }
+            }
+        }
+
         return Ok();
     }
 
