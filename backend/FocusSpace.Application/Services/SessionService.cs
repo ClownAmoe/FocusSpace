@@ -68,21 +68,23 @@ public class SessionService : ISessionService
         await _sessionRepository.SaveChangesAsync();
     }
 
-    public async Task<IEnumerable<SessionDto>> GetSessionsByUserIdAsync(int userId)
+    public async Task<SessionDto?> GetSessionByIdAsync(int sessionId)
     {
-        var sessions = await _sessionRepository.GetByUserIdAsync(userId);
-        return sessions.Select(s => new SessionDto
+        var session = await _sessionRepository.GetByIdAsync(sessionId);
+        if (session is null) return null;
+
+        return new SessionDto
         {
-            Id = s.Id,
-            UserId = s.UserId,
-            TaskId = s.TaskId,
-            TaskTitle = s.Task?.Title,
-            StartTime = s.StartTime,
-            EndTime = s.EndTime,
-            PlannedDuration = s.PlannedDuration,
-            ActualDuration = s.ActualDuration,
-            Status = s.Status.ToString(),
-            CreatedAt = s.CreatedAt
-        });
+            Id = session.Id,
+            UserId = session.UserId,
+            TaskId = session.TaskId,
+            TaskTitle = session.Task?.Title,
+            StartTime = session.StartTime,
+            EndTime = session.EndTime,
+            PlannedDuration = session.PlannedDuration,
+            ActualDuration = session.ActualDuration,
+            Status = session.Status.ToString(),
+            CreatedAt = session.CreatedAt
+        };
     }
 }
