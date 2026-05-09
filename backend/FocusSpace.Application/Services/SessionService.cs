@@ -86,6 +86,26 @@ public class SessionService : ISessionService
         });
     }
 
+    public async Task<SessionDto?> GetSessionByIdAsync(int sessionId)
+    {
+        var session = await _sessionRepository.GetByIdAsync(sessionId);
+        if (session is null) return null;
+
+        return new SessionDto
+        {
+            Id = session.Id,
+            UserId = session.UserId,
+            TaskId = session.TaskId,
+            TaskTitle = session.Task?.Title,
+            StartTime = session.StartTime,
+            EndTime = session.EndTime,
+            PlannedDuration = session.PlannedDuration,
+            ActualDuration = session.ActualDuration,
+            Status = session.Status.ToString(),
+            CreatedAt = session.CreatedAt
+        };
+    }
+
     public async Task<FocusRecommendationDto> GetFocusRecommendationAsync(int userId)
     {
         var sessions = (await _sessionRepository.GetByUserIdAsync(userId))

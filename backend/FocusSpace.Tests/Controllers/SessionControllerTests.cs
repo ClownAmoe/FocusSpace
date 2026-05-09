@@ -31,11 +31,12 @@ namespace FocusSpace.Tests.Controllers
                 new Mock<ILogger<UserManager<User>>>().Object).Object;
         }
 
-        private static SessionController CreateController(Mock<ISessionService>? serviceMock = null, UserManager<User>? userManager = null)
+        private static SessionController CreateController(Mock<ISessionService>? serviceMock = null, UserManager<User>? userManager = null, Mock<ITaskService>? taskServiceMock = null)
         {
             serviceMock ??= new Mock<ISessionService>();
             userManager ??= CreateUserManager();
-            return new SessionController(serviceMock.Object, userManager);
+            taskServiceMock ??= new Mock<ITaskService>();
+            return new SessionController(serviceMock.Object, userManager, taskServiceMock.Object);
         }
 
         // ═════════════════════════════════════════════════════════════
@@ -43,17 +44,21 @@ namespace FocusSpace.Tests.Controllers
         // ═════════════════════════════════════════════════════════════
 
         [Fact]
-        public void Index_ReturnsView()
+        public void Index_RedirectsToHomeWithFocusQuery()
         {
             // Arrange
             var controller = CreateController();
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext()
+            };
 
             // Act
             var result = controller.Index();
 
             // Assert
-            var viewResult = Assert.IsType<ViewResult>(result);
-            Assert.Null(viewResult.ViewName);
+            var redirectResult = Assert.IsType<RedirectResult>(result);
+            Assert.Equal("/?focus=1", redirectResult.Url);
         }
 
         // ═════════════════════════════════════════════════════════════
@@ -121,7 +126,7 @@ namespace FocusSpace.Tests.Controllers
             var result = await controller.Pause(sessionId);
 
             // Assert
-            var okResult = Assert.IsType<OkResult>(result);
+            var okResult = Assert.IsType<OkResult>(result); 
             serviceMock.Verify(s => s.PauseSessionAsync(sessionId), Times.Once);
         }
 
