@@ -88,24 +88,24 @@ public class SessionService : ISessionService
         };
     }
 
-    public async Task<SessionDto?> GetSessionByIdAsync(int sessionId)
+    public async Task<IEnumerable<SessionDto?>> GetSessionsByUserIdAsync(int userId)
     {
-        var session = await _sessionRepository.GetByIdAsync(sessionId);
-        if (session is null) return null;
-
-        return new SessionDto
+        var sessions = (await _sessionRepository.GetByUserIdAsync(userId))
+            .Where(s => s.ActualDuration.HasValue && s.EndTime.HasValue)
+            .ToList();
+        return sessions.Select(s => new SessionDto
         {
-            Id = session.Id,
-            UserId = session.UserId,
-            TaskId = session.TaskId,
-            TaskTitle = session.Task?.Title,
-            StartTime = session.StartTime,
-            EndTime = session.EndTime,
-            PlannedDuration = session.PlannedDuration,
-            ActualDuration = session.ActualDuration,
-            Status = session.Status.ToString(),
-            CreatedAt = session.CreatedAt
-        };
+            Id = s.Id,
+            UserId = s.UserId,
+            TaskId = s.TaskId,
+            TaskTitle = s.Task?.Title,
+            StartTime = s.StartTime,
+            EndTime = s.EndTime,
+            PlannedDuration = s.PlannedDuration,
+            ActualDuration = s.ActualDuration,
+            Status = s.Status.ToString(),
+            CreatedAt = s.CreatedAt
+        }).ToList();
     }
 
     public async Task<FocusRecommendationDto> GetFocusRecommendationAsync(int userId)
