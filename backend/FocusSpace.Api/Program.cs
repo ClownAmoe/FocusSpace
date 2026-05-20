@@ -94,14 +94,14 @@ namespace FocusSpace.Api
 
                 var app = builder.Build();
 
-                // ── Migrations & Seed ─────────────────────────────────
+                // ── Migrations & Seed (Ізольований блок захисту старту) ──
                 using (var scope = app.Services.CreateScope())
                 {
-                    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
-
                     try
                     {
+                        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+
                         Log.Information("Applying database migrations...");
                         db.Database.Migrate();
                         Log.Information("Migrations applied successfully.");
@@ -110,17 +110,15 @@ namespace FocusSpace.Api
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(ex, "Failed during startup migration/seed.");
-                        throw;
+                        Log.Error(ex, "CRITICAL: Database migration failed, but application startup will continue.");
                     }
                 }
 
-                // ── Middleware ────────────────────────────────────────
-                if (app.Environment.IsDevelopment())
+                app.UseSwagger();
+                app.UseSwaggerUI(options =>
                 {
-                    app.UseSwagger();
-                    app.UseSwaggerUI();
-                }
+                    options.SwaggerEndpoint("/swagger/v1/swagger.json", "FocusSpace API v1");
+                });
 
                 app.UseSerilogRequestLogging(options =>
                 {
@@ -139,6 +137,7 @@ namespace FocusSpace.Api
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}");
 
+                Log.Information("Web host is starting execution via app.Run()...");
                 app.Run();
             }
             catch (Exception ex)
