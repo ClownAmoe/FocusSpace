@@ -41,12 +41,9 @@ jobs:
           name: .net-app
           path: ${{env.DOTNET_ROOT}}/myapp
 
-  deploy:
+deploy:
     runs-on: windows-latest
     needs: build
-    permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
 
     steps:
       - name: Download artifact from build job
@@ -57,12 +54,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_E0A1383939FB41EAA3C0EC6BE2E2EE10 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_19AD87512D9D4F42BA8D8699DFC623DF }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_9D1A91A561E2445398EA21881CDCD387 }}
+          creds: ${{ secrets.AZURE_CREDENTIALS_21 }}
 
       - name: Deploy to Azure Web App
-        id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'focusspace-21'
