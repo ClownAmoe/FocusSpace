@@ -8,7 +8,6 @@ on:
     branches:
       - deploy/21
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: windows-latest
@@ -41,7 +40,7 @@ jobs:
           name: .net-app
           path: ${{env.DOTNET_ROOT}}/myapp
 
-deploy:
+  deploy:
     runs-on: windows-latest
     needs: build
 
@@ -54,7 +53,7 @@ deploy:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS_21 }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
@@ -62,4 +61,3 @@ deploy:
           app-name: 'focusspace-21'
           slot-name: 'Production'
           package: .
-          
