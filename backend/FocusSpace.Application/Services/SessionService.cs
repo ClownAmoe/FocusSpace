@@ -87,4 +87,61 @@ public class SessionService : ISessionService
             CreatedAt = session.CreatedAt
         };
     }
+
+    public async Task<SessionDto?> GetSessionByIdAsync(int sessionId)
+    {
+        var session = await _sessionRepository.GetByIdAsync(sessionId);
+        if (session is null) return null;
+
+        return new SessionDto
+        {
+            Id = session.Id,
+            UserId = session.UserId,
+            TaskId = session.TaskId,
+            TaskTitle = session.Task?.Title,
+            StartTime = session.StartTime,
+            EndTime = session.EndTime,
+            PlannedDuration = session.PlannedDuration,
+            ActualDuration = session.ActualDuration,
+            Status = session.Status.ToString(),
+            CreatedAt = session.CreatedAt
+        };
+    }
+
+    public async Task<FocusRecommendationDto> GetFocusRecommendationAsync(int userId)
+    {
+        var sessions = (await _sessionRepository.GetByUserIdAsync(userId))
+            .Where(s => s.ActualDuration.HasValue && s.EndTime.HasValue)
+            .ToList();
+
+        if (!sessions.Any())
+        {
+            return new FocusRecommendationDto
+            {
+                RecommendedDuration = TimeSpan.FromMinutes(25),
+                BestFocusPeriod = "Any time",
+                Details = "Not enough completed sessions yet to create a recommendation."
+            };
+        }
+
+        var averageMinutes = sessions.Average(s => s.ActualDuration!.Value.TotalMinutes);
+        var recommendedDuration = TimeSpan.FromMinutes(Math.Max(1, Math.Round(averageMinutes)));
+
+        var bestHourGroup = sessions
+            .GroupBy(s => s.StartTime.Hour)
+            .OrderByDescending(g => g.Count())
+            .ThenBy(g => g.Key)
+            .First();
+
+        var startHour = bestHourGroup.Key;
+        var endHour = (startHour + 1) % 24;
+        var bestFocusPeriod = $"{startHour:00}:00 - {endHour:00}:00";
+
+        return new FocusRecommendationDto
+        {
+            RecommendedDuration = recommendedDuration,
+            BestFocusPeriod = bestFocusPeriod,
+            Details = $"Based on {sessions.Count} completed session(s)."
+        };
+    }
 }
