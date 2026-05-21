@@ -19,4 +19,13 @@
         public TimeSpan? DistanceFromPrevious { get; set; }
         public string? ImageUrl { get; set; }
     }
+
+    public class PlanetAdvancementDto
+    {
+        public bool Advanced { get; set; }
+        public int CurrentPlanetId { get; set; }
+        public string CurrentPlanetName { get; set; } = string.Empty;
+        public long TotalFocusMinutes { get; set; }
+        public long? MinutesToNextPlanet { get; set; }
+    }
 }

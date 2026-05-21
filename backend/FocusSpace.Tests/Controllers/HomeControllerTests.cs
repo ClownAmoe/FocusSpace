@@ -1,8 +1,14 @@
 using FocusSpace.Api.Controllers;
+using FocusSpace.Domain.Entities;
 using FocusSpace.Infrastructure.Data;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Moq;
 using Xunit;
+using SystemTask = System.Threading.Tasks.Task;
 
 namespace FocusSpace.Tests.Controllers
 {
@@ -18,7 +24,7 @@ namespace FocusSpace.Tests.Controllers
                 .Options;
 
             var context = new AppDbContext(options);
-            context.Planets.Add(new FocusSpace.Domain.Entities.Planet
+            context.Planets.Add(new Planet
             {
                 Id = 3,
                 Name = "Earth",
@@ -27,11 +33,27 @@ namespace FocusSpace.Tests.Controllers
             });
             context.SaveChanges();
 
-            return new HomeController(context);
+            var userManagerMock = new Mock<UserManager<User>>(
+                new Mock<IUserStore<User>>().Object,
+                new Mock<IOptions<IdentityOptions>>().Object,
+                new Mock<IPasswordHasher<User>>().Object,
+                new IUserValidator<User>[0],
+                new IPasswordValidator<User>[0],
+                new Mock<ILookupNormalizer>().Object,
+                new Mock<IdentityErrorDescriber>().Object,
+                new Mock<IServiceProvider>().Object,
+                new Mock<ILogger<UserManager<User>>>().Object);
+
+            var controller = new HomeController(context, userManagerMock.Object);
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext()
+            };
+            return controller;
         }
 
         [Fact]
-        public async Task Index_ReturnsView_WithCorrectViewName()
+        public async SystemTask Index_ReturnsView_WithCorrectViewName()
         {
             // Arrange
             var controller = CreateController();
@@ -45,7 +67,7 @@ namespace FocusSpace.Tests.Controllers
         }
 
         [Fact]
-        public async Task Index_ReturnsViewResultType_IsIActionResult()
+        public async SystemTask Index_ReturnsViewResultType_IsIActionResult()
         {
             // Arrange
             var controller = CreateController();

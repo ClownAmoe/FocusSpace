@@ -11,4 +11,5 @@ public interface ISessionService
     Task<IEnumerable<SessionDto>> GetSessionsByUserIdAsync(int userId);
     Task<SessionDto?> GetSessionByIdAsync(int sessionId);
     Task<FocusRecommendationDto> GetFocusRecommendationAsync(int userId);
+    Task<SessionDto?> GetActiveSessionAsync(int userId);
 }

@@ -88,10 +88,31 @@ public class SessionService : ISessionService
         };
     }
 
+    public async Task<SessionDto?> GetActiveSessionAsync(int userId)
+    {
+        var sessions = await _sessionRepository.GetByUserIdAsync(userId);
+        var active = sessions.FirstOrDefault(s =>
+            s.Status == SessionStatus.Ongoing || s.Status == SessionStatus.Paused);
+        if (active is null) return null;
+        return new SessionDto
+        {
+            Id = active.Id,
+            UserId = active.UserId,
+            TaskId = active.TaskId,
+            TaskTitle = active.Task?.Title,
+            StartTime = active.StartTime,
+            EndTime = active.EndTime,
+            PlannedDuration = active.PlannedDuration,
+            ActualDuration = active.ActualDuration,
+            Status = active.Status.ToString(),
+            CreatedAt = active.CreatedAt
+        };
+    }
+
     public async Task<IEnumerable<SessionDto?>> GetSessionsByUserIdAsync(int userId)
     {
         var sessions = (await _sessionRepository.GetByUserIdAsync(userId))
-            .Where(s => s.ActualDuration.HasValue && s.EndTime.HasValue)
+            .Where(s => s.EndTime.HasValue)
             .ToList();
         return sessions.Select(s => new SessionDto
         {

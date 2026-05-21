@@ -14,12 +14,18 @@ public class SessionController : Controller
     private readonly ISessionService _sessionService;
     private readonly UserManager<User> _userManager;
     private readonly ITaskService _taskService;
+    private readonly IUserProgressService _userProgressService;
 
-    public SessionController(ISessionService sessionService, UserManager<User> userManager, ITaskService taskService)
+    public SessionController(
+        ISessionService sessionService,
+        UserManager<User> userManager,
+        ITaskService taskService,
+        IUserProgressService userProgressService)
     {
         _sessionService = sessionService;
         _userManager = userManager;
         _taskService = taskService;
+        _userProgressService = userProgressService;
     }
 
     private async Task<int> GetCurrentUserIdAsync()
@@ -28,15 +34,8 @@ public class SessionController : Controller
         return user?.Id ?? throw new InvalidOperationException("Authenticated user not found.");
     }
 
-    private static bool IsActiveStatus(string status)
-        => string.Equals(status, nameof(SessionStatus.Ongoing), StringComparison.OrdinalIgnoreCase)
-           || string.Equals(status, nameof(SessionStatus.Paused), StringComparison.OrdinalIgnoreCase);
-
     private async Task<SessionDto?> GetActiveSessionDtoAsync(int userId)
-    {
-        var sessions = await _sessionService.GetSessionsByUserIdAsync(userId);
-        return sessions.FirstOrDefault(s => IsActiveStatus(s.Status));
-    }
+        => await _sessionService.GetActiveSessionAsync(userId);
 
     public IActionResult Index()
     {
@@ -92,22 +91,28 @@ public class SessionController : Controller
     public async Task<IActionResult> Complete([FromBody] UpdateSessionDto dto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var userId = await GetCurrentUserIdAsync();
         await _sessionService.CompleteSessionAsync(dto);
+
+        PlanetAdvancementDto? advancement = null;
 
         if (string.Equals(dto.Status, nameof(SessionStatus.Completed), StringComparison.OrdinalIgnoreCase))
         {
             var session = await _sessionService.GetSessionByIdAsync(dto.Id);
-            if (session?.TaskId is int taskId)
+            if (session?.TaskId is int taskId && session.UserId == userId)
+                await _taskService.DeleteTaskAsync(taskId);
+
+            if (dto.ActualDuration is not null
+                && TimeSpan.TryParse(dto.ActualDuration, out var duration)
+                && duration.TotalMinutes > 0)
             {
-                var userId = await GetCurrentUserIdAsync();
-                if (session.UserId == userId)
-                {
-                    await _taskService.DeleteTaskAsync(taskId);
-                }
+                advancement = await _userProgressService.AddFocusMinutesAndCheckPlanetAsync(
+                    userId, (int)Math.Round(duration.TotalMinutes));
             }
         }
 
-        return Ok();
+        return Ok(new { advancement });
     }
 
     [HttpPost]

@@ -1,13 +1,14 @@
 @{
     ViewData["Title"] = "FocusSpace";
 }
-@model List<FocusSpace.Domain.Entities.Planet>
+@model FocusSpace.Application.DTOs.HomeViewModel
 @using System.Globalization
 
 @{
-    var planets = (Model ?? new List<FocusSpace.Domain.Entities.Planet>())
+    var planets = (Model?.Planets ?? new List<FocusSpace.Domain.Entities.Planet>())
         .OrderBy(p => p.OrderNumber)
         .ToList();
+    var currentOrderNumber = Model?.CurrentPlanetOrderNumber ?? 1;
 
     const double centerX = 510;
     const double centerY = 360;
@@ -127,7 +128,8 @@
                 var radius = size.ToString("0.###", CultureInfo.InvariantCulture);
                 var desc = planet.Description ?? string.Empty;
                 var distance = planet.DistanceFromPrevious?.ToString() ?? string.Empty;
-                <g class="planet @typeClass"
+                var isLocked = planet.OrderNumber > currentOrderNumber;
+                <g class="planet @typeClass @(isLocked ? "locked" : "")"
                    data-id="@planet.Id"
                    data-name="@planet.Name"
                    data-type="@type"
@@ -137,9 +139,10 @@
                    data-cx="@cx"
                    data-cy="@cy"
                    data-radius="@radius"
+                   data-locked="@isLocked.ToString().ToLowerInvariant()"
                    tabindex="0"
                    role="button"
-                   aria-label="Planet @planet.Name">
+                   aria-label="Planet @planet.Name@(isLocked ? " (locked)" : "")">
                     <circle cx="@cx" cy="@cy" r="@radius" fill="url(#planetGradient-@i)" />
                     <circle cx="@cx" cy="@cy" r="@radius" fill="#000" opacity="0.15" />
                     @if (type == "Rocky")
@@ -221,21 +224,49 @@
         <a href="/Session" class="btn btn-outline-info" id="openFocusTimerBtn">Open Focus Timer</a>
     </div>
     <h3 class="text-center mb-4">Available Planets</h3>
-    @if (Model is not null && Model.Any())
+    @if (Model?.Planets is { Count: > 0 })
     {
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <p class="text-center text-muted mb-3">
+                Total focus time: <strong class="text-light">@Model.TotalFocusMinutes min</strong>
+                @if (Model.MinutesToNextPlanet.HasValue)
+                {
+                    <span> &mdash; <span class="text-warning">@Model.MinutesToNextPlanet min</span> to next planet</span>
+                }
+                else
+                {
+                    <span class="text-success"> &mdash; All planets unlocked!</span>
+                }
+            </p>
+        }
         <div class="row g-3">
-            @foreach (var planet in Model)
+            @foreach (var planet in Model.Planets.OrderBy(p => p.OrderNumber))
             {
+                var locked = planet.OrderNumber > Model.CurrentPlanetOrderNumber;
                 <div class="col-12 col-md-6 col-lg-4">
-                    <div class="card h-100 bg-dark text-light border-secondary">
+                    <div class="card h-100 bg-dark text-light @(locked ? "border-secondary opacity-50" : "border-secondary")">
                         <div class="card-body">
-                            <h5 class="card-title">#@planet.OrderNumber @planet.Name</h5>
-                            <p class="card-text text-secondary mb-2">
-                                @(string.IsNullOrWhiteSpace(planet.Description) ? "No description" : planet.Description)
-                            </p>
-                            @if (planet.DistanceFromPrevious.HasValue)
+                            @if (locked)
                             {
-                                <div class="small text-info">Distance: @planet.DistanceFromPrevious</div>
+                                <h5 class="card-title text-muted">#@planet.OrderNumber ???</h5>
+                                <p class="card-text text-secondary mb-2">Locked</p>
+                                @if (Model.PlanetThresholds.TryGetValue(planet.OrderNumber, out var req))
+                                {
+                                    var needed = req - Model.TotalFocusMinutes;
+                                    <div class="small text-warning">@needed min of focus to unlock</div>
+                                }
+                            }
+                            else
+                            {
+                                <h5 class="card-title">#@planet.OrderNumber @planet.Name</h5>
+                                <p class="card-text text-secondary mb-2">
+                                    @(string.IsNullOrWhiteSpace(planet.Description) ? "No description" : planet.Description)
+                                </p>
+                                @if (planet.DistanceFromPrevious.HasValue)
+                                {
+                                    <div class="small text-info">Distance: @planet.DistanceFromPrevious</div>
+                                }
                             }
                         </div>
                     </div>
@@ -301,7 +332,7 @@
                             <button class="timer-danger" id="cancelBtn" type="button">Cancel</button>
                         </div>
                         <div id="cancelConfirm" class="timer-confirm" style="display:none;">
-                            <p>Cancel this session?</p>
+                            <p id="cancelConfirmMsg">Cancel this session?</p>
                             <div class="timer-actions">
                                 <button class="timer-danger" id="confirmCancelBtn" type="button">Yes, cancel</button>
                                 <button class="timer-secondary" id="cancelBackBtn" type="button">No</button>
@@ -321,6 +352,11 @@
                         <div class="timer-done">OK</div>
                         <h4 class="timer-title">Session Complete!</h4>
                         <p class="timer-subtitle">Great work. Take a short break.</p>
+                        <div id="planetAdvanceMsg" style="display:none; margin-top:12px; padding:10px; border-radius:8px; background:rgba(124,58,237,0.2); border:1px solid rgba(124,58,237,0.4); text-align:center;">
+                            <div style="font-weight:600; color:#cdb7ff; font-size:15px;">Planet Unlocked!</div>
+                            <div id="planetAdvanceName" style="font-size:13px; color:#e8e9ff; margin-top:4px;"></div>
+                            <div id="planetAdvanceProgress" style="font-size:12px; color:#9a9fc2; margin-top:2px;"></div>
+                        </div>
                         <button class="timer-primary" id="resetTimerBtn" type="button">New session</button>
                     </div>
                 </div>
@@ -402,6 +438,12 @@
     .planet.type-exo circle:first-child {
         stroke: rgba(186, 162, 255, 0.55);
         stroke-width: 1;
+    }
+
+    .planet.locked {
+        opacity: 0.35;
+        filter: grayscale(1);
+        cursor: default;
     }
 
     .planet-info {
@@ -1017,13 +1059,15 @@
             return document.querySelector('#af-form input[name="__RequestVerificationToken"]')?.value || '';
         }
 
-        function setActionState(enabled) {
+        function setActionState(enabled, lockedMessage = null) {
             const disabled = !enabled || !isAuthenticated;
             taskMinutesInput.disabled = disabled;
             startSessionButton.disabled = disabled;
 
             if (!isAuthenticated) {
                 actionsNote.textContent = 'Log in to start the timer.';
+            } else if (lockedMessage) {
+                actionsNote.textContent = lockedMessage;
             } else if (!enabled) {
                 actionsNote.textContent = 'Select a planet to enable the timer.';
             } else {
@@ -1092,19 +1136,21 @@
             const order = planet.dataset.order || '-';
             const description = (planet.dataset.description || '').trim();
             const distance = (planet.dataset.distance || '').trim();
+            const isLocked = planet.dataset.locked === 'true';
 
-            infoName.textContent = `#${order} ${name}`;
-            infoType.textContent = `Type: ${type}`;
-            infoDescription.textContent = description || 'No description provided for this planet.';
-            infoDistance.textContent = distance
+            infoName.textContent = isLocked ? `#${order} ???` : `#${order} ${name}`;
+            infoType.textContent = isLocked ? 'Locked' : `Type: ${type}`;
+            infoDescription.textContent = isLocked
+                ? 'Complete more focus sessions to unlock this planet.'
+                : (description || 'No description provided for this planet.');
+            infoDistance.textContent = isLocked ? '' : (distance
                 ? `Distance from previous: ${distance}`
-                : 'Distance from previous: not specified';
+                : 'Distance from previous: not specified');
 
-            // Show close button when planet is selected
             closePlanetPanel.style.display = 'block';
-            selectedPlanetId = planet.dataset.id || null;
+            selectedPlanetId = isLocked ? null : (planet.dataset.id || null);
             planetActions.classList.remove('hidden');
-            setActionState(true);
+            setActionState(!isLocked, isLocked ? 'Keep focusing to unlock this planet.' : null);
         }
 
         function showTooltip(planet, event) {
@@ -1869,11 +1915,17 @@
         async function togglePause() {
             if (!currentSessionId) return;
 
+            const confirmMsg = document.getElementById('cancelConfirmMsg');
+            const confirmBtn = document.getElementById('confirmCancelBtn');
+
             if (!isPaused) {
                 clearInterval(intervalId);
                 intervalId = null;
                 isPaused = true;
                 pauseBtn.textContent = 'Resume';
+                if (cancelBtn) cancelBtn.textContent = 'Abandon';
+                if (confirmMsg) confirmMsg.textContent = 'Abandon this session?';
+                if (confirmBtn) confirmBtn.textContent = 'Yes, abandon';
 
                 await fetch('/Session/Pause', {
                     method: 'POST',
@@ -1883,6 +1935,9 @@
             } else {
                 isPaused = false;
                 pauseBtn.textContent = 'Pause';
+                if (cancelBtn) cancelBtn.textContent = 'Cancel';
+                if (confirmMsg) confirmMsg.textContent = 'Cancel this session?';
+                if (confirmBtn) confirmBtn.textContent = 'Yes, cancel';
 
                 await fetch('/Session/Resume', {
                     method: 'POST',
@@ -1917,16 +1972,43 @@
                 return;
             }
 
-            await fetch('/Session/Complete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    id: currentSessionId,
-                    status: completed ? 'Completed' : 'Aborted',
-                    endTime: new Date().toISOString(),
-                    actualDuration: formatDuration(totalSeconds - secondsLeft)
-                })
-            });
+            if (completed) {
+                const res = await fetch('/Session/Complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: currentSessionId,
+                        status: 'Completed',
+                        endTime: new Date().toISOString(),
+                        actualDuration: formatDuration(totalSeconds - secondsLeft)
+                    })
+                });
+                const data = await res.json().catch(() => null);
+                const adv = data?.advancement;
+                const advMsg = document.getElementById('planetAdvanceMsg');
+                const advName = document.getElementById('planetAdvanceName');
+                const advProgress = document.getElementById('planetAdvanceProgress');
+                if (adv?.advanced && advMsg && advName) {
+                    advName.textContent = `You've reached ${adv.currentPlanetName}!`;
+                    advProgress.textContent = adv.minutesToNextPlanet != null
+                        ? `${adv.minutesToNextPlanet} min to next planet`
+                        : 'Maximum planet reached!';
+                    advMsg.style.display = 'block';
+                } else if (advMsg) {
+                    advMsg.style.display = 'none';
+                }
+            } else {
+                await fetch('/Session/Complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: currentSessionId,
+                        status: 'Abandoned',
+                        endTime: new Date().toISOString(),
+                        actualDuration: formatDuration(totalSeconds - secondsLeft)
+                    })
+                });
+            }
 
             if (completed && selectedTaskId) {
                 await loadTasks();
@@ -1958,6 +2040,8 @@
             document.getElementById('doneMessage').style.display = 'none';
             document.getElementById('timerDisplay').style.display = 'none';
             document.getElementById('setup').style.display = 'block';
+            const advMsg = document.getElementById('planetAdvanceMsg');
+            if (advMsg) advMsg.style.display = 'none';
             applyPlanetInfo(null);
             updateSelectedTaskDisplay();
         }

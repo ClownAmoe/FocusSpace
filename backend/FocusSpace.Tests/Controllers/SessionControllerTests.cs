@@ -31,12 +31,13 @@ namespace FocusSpace.Tests.Controllers
                 new Mock<ILogger<UserManager<User>>>().Object).Object;
         }
 
-        private static SessionController CreateController(Mock<ISessionService>? serviceMock = null, UserManager<User>? userManager = null, Mock<ITaskService>? taskServiceMock = null)
+        private static SessionController CreateController(Mock<ISessionService>? serviceMock = null, UserManager<User>? userManager = null, Mock<ITaskService>? taskServiceMock = null, Mock<IUserProgressService>? progressMock = null)
         {
             serviceMock ??= new Mock<ISessionService>();
             userManager ??= CreateUserManager();
             taskServiceMock ??= new Mock<ITaskService>();
-            return new SessionController(serviceMock.Object, userManager, taskServiceMock.Object);
+            progressMock ??= new Mock<IUserProgressService>();
+            return new SessionController(serviceMock.Object, userManager, taskServiceMock.Object, progressMock.Object);
         }
 
         // ═════════════════════════════════════════════════════════════
@@ -76,17 +77,36 @@ namespace FocusSpace.Tests.Controllers
         {
             // Arrange
             var serviceMock = new Mock<ISessionService>();
-            var dto = new UpdateSessionDto { Id = 1, Status = "Completed", EndTime = DateTime.UtcNow };
+            var dto = new UpdateSessionDto { Id = 1, Status = "Aborted", EndTime = DateTime.UtcNow };
             serviceMock.Setup(s => s.CompleteSessionAsync(It.IsAny<UpdateSessionDto>()))
                 .Returns(Task.CompletedTask);
 
-            var controller = CreateController(serviceMock);
+            var userStoreMock = new Mock<IUserStore<User>>();
+            var userManagerMock = new Mock<UserManager<User>>(
+                userStoreMock.Object,
+                new Mock<IOptions<IdentityOptions>>().Object,
+                new Mock<IPasswordHasher<User>>().Object,
+                new IUserValidator<User>[0],
+                new IPasswordValidator<User>[0],
+                new Mock<ILookupNormalizer>().Object,
+                new Mock<IdentityErrorDescriber>().Object,
+                new Mock<IServiceProvider>().Object,
+                new Mock<ILogger<UserManager<User>>>().Object);
+            var user = new User { Id = 1 };
+            userManagerMock.Setup(m => m.GetUserAsync(It.IsAny<System.Security.Claims.ClaimsPrincipal>()))
+                .ReturnsAsync(user);
+
+            var controller = CreateController(serviceMock, userManagerMock.Object);
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext()
+            };
 
             // Act
             var result = await controller.Complete(dto);
 
             // Assert
-            var okResult = Assert.IsType<OkResult>(result);
+            Assert.IsType<OkObjectResult>(result);
             serviceMock.Verify(s => s.CompleteSessionAsync(It.IsAny<UpdateSessionDto>()), Times.Once);
         }
 

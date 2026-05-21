@@ -87,6 +87,10 @@ namespace FocusSpace.Api
                 builder.Services.AddScoped<ISessionRepository, SessionRepository>();
                 builder.Services.AddScoped<ISessionService, SessionService>();
 
+                builder.Services.AddScoped<IPlanetRepository, PlanetRepository>();
+                builder.Services.AddScoped<IUserRepository, UserRepository>();
+                builder.Services.AddScoped<IUserProgressService, UserProgressService>();
+
                 // ── MVC + Swagger ─────────────────────────────────────
                 builder.Services.AddControllersWithViews();
                 builder.Services.AddEndpointsApiExplorer();
